@@ -115,14 +115,14 @@ def classify_sea_state(wave_height_m: float | None) -> dict[str, Any]:
         }
 
     for entry in WMO_SEA_STATE_TABLE[1:]:
-        if wave_height_m <= entry["max_m"]:
-            return {
-                "wmo_code": entry["code"],
-                "category": entry["category"],
-                "description": entry["description"],
-                "rule_standard": "WMO Code Table 3700 / Douglas Sea Scale",
-            }
-
+        SEA_STATE_RULES: list[dict[str, str | float | int]] = [
+    {
+        "max_m": 0.1,
+        "code": 0,
+        "category": "Calm",
+        "description": "Calm",
+    },
+]
     return {
         "wmo_code": 9,
         "category": "Phenomenal",

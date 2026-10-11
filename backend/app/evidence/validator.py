@@ -7,12 +7,16 @@ def validate_evidence(
     record: EvidenceRecord,
     *,
     now: datetime | None = None,
+    allow_forecast: bool | None = None,
 ) -> list[str]:
     """
     Validate evidence timestamps and status.
 
     Returns a list of validation issues.
     An empty list means these checks passed.
+
+    For forecast data (records with 'forecast_data' in quality_flags or allow_forecast=True),
+    observation times occurring in the future or after retrieval are normal and expected.
     """
 
     issues: list[str] = []
@@ -28,16 +32,24 @@ def validate_evidence(
         issues.append("retrieval_time_in_future")
 
     # Check observation timestamp consistency.
-    if record.observed_at is not None:
-        if record.observed_at > current_time:
-            issues.append("observation_time_in_future")
+    is_forecast = (
+        allow_forecast
+        if allow_forecast is not None
+        else ("forecast_data" in (record.quality_flags or []))
+    )
 
-        if record.observed_at > record.retrieved_at:
-            issues.append("observation_after_retrieval")
+    if record.observed_at is not None:
+        if not is_forecast:
+            if record.observed_at > current_time:
+                issues.append("observation_time_in_future")
+
+            if record.observed_at > record.retrieved_at:
+                issues.append("observation_after_retrieval")
 
     # Preserve the existing status; do not silently mark evidence valid.
     if record.status != "valid":
         issues.append(f"evidence_status_{record.status}")
 
     return issues
+
 

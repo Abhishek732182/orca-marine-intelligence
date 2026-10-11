@@ -1,0 +1,906 @@
+{
+  "info": {
+    "name": "ORCA Five Independent Agents",
+    "_postman_id": "c1f7a492-3e28-4e89-b7b5-888e2bf129d2",
+    "description": "Postman Collection for ORCA Marine Intelligence: Five Independent AI Agents (Weather, Ocean, Fishing Zone, Route, Safety/Risk) covering valid requests, invalid coordinates, missing evidence, and error handling.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Verify that ORCA Marine Intelligence API service is active."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Service status is ok', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('ok');",
+              "    pm.expect(jsonData.service).to.eql('orca-api');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1a. Weather Agent - Valid Offshore Coordinates",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"location_name\": \"Offshore Goa\",\n  \"forecast_days\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/weather/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "weather", "analyze"]
+        },
+        "description": "Weather Agent retrieves current and forecast weather conditions for coordinates."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Correct Weather Agent identifier & schema', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Weather Agent');",
+              "    pm.expect(['success', 'insufficient_evidence', 'error']).to.include(jsonData.status);",
+              "    pm.expect(jsonData).to.have.property('data_source');",
+              "    pm.expect(jsonData).to.have.property('observations');",
+              "    pm.expect(jsonData).to.have.property('analysis');",
+              "    pm.expect(jsonData).to.have.property('warnings');",
+              "    pm.expect(jsonData).to.have.property('generated_at');",
+              "    if (jsonData.status === 'success') {",
+              "        pm.expect(jsonData.observations).to.have.property('temperature_c');",
+              "        pm.expect(jsonData.observations).to.have.property('wind_speed_knots');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1b. Weather Agent - Geocoding by Location Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location_name\": \"Panaji\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/weather/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "weather", "analyze"]
+        },
+        "description": "Weather Agent resolves a location name without explicit coordinates."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Geocoding resolves coordinates', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Weather Agent');",
+              "    pm.expect(jsonData.location.latitude).to.not.be.null;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1c. Weather Agent - Missing Coordinates and Name (Missing Evidence)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/weather/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "weather", "analyze"]
+        },
+        "description": "Weather Agent returns insufficient_evidence when neither coordinates nor location name are provided."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Returns insufficient_evidence for empty input', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Weather Agent');",
+              "    pm.expect(jsonData.status).to.eql('insufficient_evidence');",
+              "    pm.expect(jsonData.warnings.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2a. Ocean Agent - Valid 24h Wave Forecast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"location_name\": \"Offshore Goa\",\n  \"forecast_time_window_hours\": 24\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/ocean/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "ocean", "analyze"]
+        },
+        "description": "Ocean Agent returns wave height metrics and WMO Code Table 3700 sea-state classification."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Correct Ocean Agent schema & sea-state classification', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Ocean Agent');",
+              "    pm.expect(jsonData.status).to.eql('success');",
+              "    pm.expect(jsonData.observations.min_wave_height_m).to.not.be.null;",
+              "    pm.expect(jsonData.observations.max_wave_height_m).to.not.be.null;",
+              "    pm.expect(jsonData.observations.avg_wave_height_m).to.not.be.null;",
+              "    pm.expect(jsonData.analysis.sea_state_code).to.not.be.null;",
+              "    pm.expect(jsonData.analysis.rule_standard).to.include('WMO Code Table 3700');",
+              "    // Verify no false timestamp warnings on forecast data",
+              "    var joinedWarnings = (jsonData.warnings || []).join(' ');",
+              "    pm.expect(joinedWarnings).to.not.include('observation_after_retrieval');",
+              "    pm.expect(joinedWarnings).to.not.include('observation_time_in_future');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2b. Ocean Agent - Inland Coordinates (Missing Evidence)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 21.15,\n  \"longitude\": 79.09,\n  \"location_name\": \"Inland Nagpur\",\n  \"forecast_time_window_hours\": 24\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/ocean/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "ocean", "analyze"]
+        },
+        "description": "Ocean Agent returns insufficient_evidence for inland coordinates without fabricating data."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Reports insufficient_evidence for land coordinates', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('insufficient_evidence');",
+              "    pm.expect(jsonData.observations.sample_count).to.eql(0);",
+              "    pm.expect(jsonData.analysis.sea_state_category).to.eql('UNKNOWN');",
+              "    pm.expect(jsonData.warnings.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3a. Fishing Zone Agent - Operational Analysis & Evidence Separation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"location_name\": \"Arabian Sea Fishing Sector\",\n  \"target_species\": \"Mackerel\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/fishing-zone/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "fishing-zone", "analyze"]
+        },
+        "description": "Fishing Zone Agent analyzes physical wave feasibility and strictly separates unverified fish distribution."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Correct Fishing Zone Agent schema & disclaimers', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Fishing Zone Agent');",
+              "    pm.expect(jsonData.status).to.eql('insufficient_evidence');",
+              "    pm.expect(jsonData.analysis).to.have.property('vessel_safety_notice');",
+              "    pm.expect(jsonData.analysis).to.have.property('verified_fish_distribution');",
+              "    pm.expect(jsonData.analysis.verified_fish_distribution.status).to.eql('UNVERIFIED');",
+              "    pm.expect(jsonData.analysis).to.have.property('fish_distribution_disclaimer');",
+              "    pm.expect(jsonData.warnings.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3b. Fishing Zone Agent - Omitted Coordinates (Missing Evidence)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/fishing-zone/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "fishing-zone", "analyze"]
+        },
+        "description": "Fishing Zone Agent returns insufficient_evidence when coordinates are omitted."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Missing coordinates handled gracefully', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('insufficient_evidence');",
+              "    pm.expect(jsonData.error).to.include('Coordinates required');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4a. Route Agent - Valid Passage Calculation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin_latitude\": 18.9388,\n  \"origin_longitude\": 72.8354,\n  \"origin_name\": \"Mumbai Port\",\n  \"destination_latitude\": 15.4989,\n  \"destination_longitude\": 73.8278,\n  \"destination_name\": \"Goa Mormugao Port\",\n  \"waypoints\": [\n    {\n      \"latitude\": 17.0,\n      \"longitude\": 73.0,\n      \"name\": \"Ratnagiri Offing\"\n    }\n  ],\n  \"vessel_speed_knots\": 12.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/route/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "route", "analyze"]
+        },
+        "description": "Route Agent calculates Great-Circle distance, legs, bearings, and transit times."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Preserves distinction between geodesic distance and navigable channel', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Route Agent');",
+              "    pm.expect(jsonData.status).to.eql('success');",
+              "    pm.expect(jsonData.observations.total_distance_nm).to.be.above(0);",
+              "    pm.expect(jsonData.observations.is_verified_navigable_route).to.eql(false);",
+              "    pm.expect(jsonData.analysis.navigation_type).to.eql('geodesic_straight_line');",
+              "    pm.expect(jsonData.analysis).to.have.property('navigable_route_disclaimer');",
+              "    pm.expect(jsonData.warnings.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5a. Safety/Risk Agent - Small Craft Valid Assessment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"location_name\": \"Offshore Goa\",\n  \"vessel_type\": \"small_craft\",\n  \"wave_height_m\": 1.4,\n  \"wind_speed_knots\": 16.0,\n  \"precipitation_mm\": 1.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/safety-risk/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "safety-risk", "analyze"]
+        },
+        "description": "Safety/Risk Agent assesses moderate wave and wind conditions."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Correct Safety/Risk Agent identifier and risk classification', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('Safety/Risk Agent');",
+              "    pm.expect(jsonData.status).to.eql('success');",
+              "    pm.expect(['LOW', 'MODERATE', 'HIGH', 'CRITICAL']).to.include(jsonData.analysis.risk_category);",
+              "    pm.expect(jsonData.analysis).to.have.property('legal_notice');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5b. Safety/Risk Agent - Inland / Missing Evidence (Not Presumed Safe)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 21.15,\n  \"longitude\": 79.09,\n  \"location_name\": \"Inland Nagpur\",\n  \"vessel_type\": \"small_craft\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/safety-risk/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "safety-risk", "analyze"]
+        },
+        "description": "Safety/Risk Agent explicitly marks missing data as insufficient_evidence, not safe."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Does not classify missing data as safe or low risk', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql('insufficient_evidence');",
+              "    pm.expect(jsonData.analysis.risk_category).to.eql('UNKNOWN / INSUFFICIENT EVIDENCE');",
+              "    var recs = jsonData.analysis.recommendations.join(' ');",
+              "    pm.expect(recs).to.not.include('FAVORABLE');",
+              "    pm.expect(recs).to.include('DO NOT PRESUME SAFE');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5c. Safety/Risk Agent - Severe Gale Hazard (Critical Risk)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"vessel_type\": \"small_craft\",\n  \"wave_height_m\": 3.8,\n  \"wind_speed_knots\": 38.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/safety-risk/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "safety-risk", "analyze"]
+        },
+        "description": "Safety/Risk Agent classifies severe conditions as CRITICAL risk."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Flags critical conditions and DANGER recommendations', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.analysis.risk_category).to.eql('CRITICAL');",
+              "    var recs = jsonData.analysis.recommendations.join(' ');",
+              "    pm.expect(recs).to.include('DANGER');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6a. Invalid Input - Ocean Out-of-Bounds Latitude (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 99.0,\n  \"longitude\": 72.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/ocean/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "ocean", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity for invalid latitude."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Detail returned in validation error', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('detail');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6b. Invalid Input - Route Malformed Body (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin_latitude\": \"not-a-number\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/route/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "route", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity for malformed input."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6c. Invalid Input - Weather Out-of-Bounds Longitude (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 200.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/weather/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "weather", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity for invalid longitude."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6d. Invalid Input - Route Destination Latitude Out-of-Bounds (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"origin_latitude\": 15.0,\n  \"origin_longitude\": 72.0,\n  \"destination_latitude\": 95.0,\n  \"destination_longitude\": 72.8\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/route/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "route", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity when destination latitude exceeds 90 degrees."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Validation detail exists in error payload', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('detail');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6e. Invalid Input - Safety/Risk Negative Wave Height (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"wave_height_m\": -3.5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/safety-risk/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "safety-risk", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity when wave height is negative."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Validation detail exists in error payload', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('detail');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7a. Orchestrator Agent - Mission Synthesis (Fishing Objective)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"location_name\": \"Offshore Goa Fishing Sector\",\n  \"forecast_time_window_hours\": 24,\n  \"user_objective\": \"fishing\",\n  \"vessel_type\": \"small_craft\",\n  \"target_species\": \"Mackerel\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/orchestrator/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "orchestrator", "analyze"]
+        },
+        "description": "ORCA Agent 6 Orchestrator synthesizing weather, ocean, fishing zone, and safety/risk specialist results."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Agent is ORCA Orchestrator Agent', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.agent).to.eql('ORCA Orchestrator Agent');",
+              "    pm.expect(jsonData).to.have.property('measured_observations');",
+              "    pm.expect(jsonData).to.have.property('derived_estimates');",
+              "    pm.expect(jsonData).to.have.property('composite_safety_risk');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7b. Orchestrator Agent - Passage Planning & Critical Hazard Preservation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 15.0,\n  \"longitude\": 72.0,\n  \"destination_latitude\": 18.9,\n  \"destination_longitude\": 72.8,\n  \"destination_name\": \"Mumbai Port\",\n  \"user_objective\": \"passage_planning\",\n  \"vessel_type\": \"small_craft\",\n  \"wave_height_m\": 4.8,\n  \"wind_speed_knots\": 42.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/orchestrator/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "orchestrator", "analyze"]
+        },
+        "description": "Verifies that Orchestrator strictly preserves CRITICAL safety risk and partitions geodesic calculation from navigational charts."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Preserves CRITICAL hazard rating', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.composite_safety_risk.risk_category).to.eql('CRITICAL');",
+              "    pm.expect(jsonData.derived_estimates.geodesic_route).to.have.property('distance_km');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7c. Orchestrator Agent - Invalid Latitude (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 115.0,\n  \"longitude\": 72.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/orchestrator/analyze",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "orchestrator", "analyze"]
+        },
+        "description": "Verifies 422 Unprocessable Entity when latitude exceeds 90 degrees."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8a. Assistant Agent - Chat Task (Agent 6)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"What is the weather and sea state at 15.0, 72.0?\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/assistant/chat",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "assistant", "chat"]
+        },
+        "description": "Agent 6: AI Workspace Assistant executes multi-tool plan and returns synthesized marine advisory."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Valid Assistant Response with plan and tool calls', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('conversation_id');",
+              "    pm.expect(jsonData).to.have.property('response');",
+              "    pm.expect(jsonData.plan).to.be.an('array');",
+              "    pm.expect(jsonData.tool_calls).to.be.an('array');",
+              "    pm.expect(jsonData.evidence_summary).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8b. Assistant Agent - Tools Registry",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/agents/assistant/tools",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "agents", "assistant", "tools"]
+        },
+        "description": "Lists all 12 registered modular tools with schemas and permission policies."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Registered tools contains specialists and workspace tools', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.tools).to.be.an('array');",
+              "    var names = jsonData.tools.map(t => t.name);",
+              "    pm.expect(names).to.include('invoke_weather_agent');",
+              "    pm.expect(names).to.include('invoke_ocean_agent');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -86,3 +86,34 @@ def test_invalid_evidence_status_is_reported():
     assert "evidence_status_conflicting" in validate_evidence(
         record, now=now
     )
+
+
+def test_forecast_record_allows_future_observation_without_warnings():
+    """Verify that records with 'forecast_data' flag do not trigger future observation errors."""
+    now = datetime(2026, 10, 11, 12, 0, 0, tzinfo=timezone.utc)
+    future_obs = datetime(2026, 10, 11, 18, 0, 0, tzinfo=timezone.utc)
+    record = make_record(
+        observed_at=future_obs,
+        retrieved_at=now,
+        quality_flags=["forecast_data"],
+    )
+
+    issues = validate_evidence(record, now=now)
+    assert "observation_time_in_future" not in issues
+    assert "observation_after_retrieval" not in issues
+    assert issues == []
+
+
+def test_non_forecast_future_observation_is_flagged():
+    """Verify that standard non-forecast records with future observation time are flagged."""
+    now = datetime(2026, 10, 11, 12, 0, 0, tzinfo=timezone.utc)
+    future_obs = datetime(2026, 10, 11, 18, 0, 0, tzinfo=timezone.utc)
+    record = make_record(
+        observed_at=future_obs,
+        retrieved_at=now,
+        quality_flags=[],
+    )
+
+    issues = validate_evidence(record, now=now)
+    assert "observation_time_in_future" in issues
+    assert "observation_after_retrieval" in issues
