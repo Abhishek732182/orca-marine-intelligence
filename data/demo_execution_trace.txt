@@ -1,0 +1,76 @@
+ORCA MARINE INTELLIGENCE AGENT - DEMO EXECUTION TRACE
+===========================================================================
+
+Target Location:      Offshore Arabian Sea (Goa)
+Requested Lat/Lon:    15.0 deg N, 72.0 deg E
+Resolved Grid Point:  15.041664 deg N, 71.95834 deg E
+Workflow ID:          orca-wf-f46a852a7eef
+Execution Status:     VALID
+
+WORKFLOW STEP EXECUTION TRACE:
+  [STEP 1/5] Validated input: location='Offshore Arabian Sea (Goa)', lat=15.0000, lon=72.0000, window=24h
+  [STEP 2/5] Successfully retrieved 24 wave-height records from open-meteo-marine.
+  [STEP 3/5] Normalized and validated 24 records. Status: valid
+  [STEP 4/5] Analyzed wave conditions: Range=0.88m-1.0m, Avg=0.91m. WMO Sea State: Code 3 (Slight)
+  [STEP 5/5] Advisory report synthesized (Generation mode: deterministic).
+
+MEASUREMENTS SUMMARY:
+  Sample Count:         24 hourly records
+  Min Wave Height:      0.88 m
+  Max Wave Height:      1.0 m
+  Average Wave Height:  0.91 m
+  Latest Wave Height:   1.0 m
+  Measurement Unit:     m
+
+WMO SEA STATE CLASSIFICATION:
+  WMO Code:             Code 3
+  Sea State Category:   Slight
+  Standard Reference:   WMO Code Table 3700 / Douglas Sea Scale
+  Synthesis Mode:       DETERMINISTIC
+
+FINAL ADVISORY:
+  Advisory for Offshore Arabian Sea (Goa) (15.0000 deg N, 72.0000 deg E): Forecast significant wave heights over the next 24h range from 0.88 m to 1.00 m (average 0.91 m, latest 1.00 m). Sea conditions are classified as 'Slight' under WMO Code Table 3700 (Sea State Code 3). Operational Notice: Wave height alone does not constitute a maritime navigation or fishing safety clearance; mariners must inspect wind speeds, swell direction, tidal currents, and official hydrographic notices before proceeding.
+
+SOURCE ATTRIBUTION & PROVENANCE:
+  Provider Name:        open-meteo-marine
+  Model Attribution:    Open-Meteo Marine Weather API (ECMWF / Meteo-France models)
+  Standard Citation:    WMO Code Table 3700 / Douglas Sea Scale; Open-Meteo Marine API (https://open-meteo.com/)
+  Provider Timezone:    GMT
+
+TIMESTAMPS & WINDOW:
+  Evidence Retrieved At:2026-10-11T12:20:14.664222+00:00
+  Forecast Start:       2026-10-11T00:00:00+00:00
+  Forecast End:         2026-10-11T23:00:00+00:00
+  Forecast Window:      24 Hours
+
+FULL 24-HOUR FORECAST TIME SERIES:
+  [01] 2026-10-11T00:00:00+00:00 -> 0.96 m
+  [02] 2026-10-11T01:00:00+00:00 -> 0.94 m
+  [03] 2026-10-11T02:00:00+00:00 -> 0.94 m
+  [04] 2026-10-11T03:00:00+00:00 -> 0.92 m
+  [05] 2026-10-11T04:00:00+00:00 -> 0.92 m
+  [06] 2026-10-11T05:00:00+00:00 -> 0.92 m
+  [07] 2026-10-11T06:00:00+00:00 -> 0.92 m
+  [08] 2026-10-11T07:00:00+00:00 -> 0.92 m
+  [09] 2026-10-11T08:00:00+00:00 -> 0.9 m
+  [10] 2026-10-11T09:00:00+00:00 -> 0.9 m
+  [11] 2026-10-11T10:00:00+00:00 -> 0.9 m
+  [12] 2026-10-11T11:00:00+00:00 -> 0.88 m
+  [13] 2026-10-11T12:00:00+00:00 -> 0.88 m
+  [14] 2026-10-11T13:00:00+00:00 -> 0.88 m
+  [15] 2026-10-11T14:00:00+00:00 -> 0.88 m
+  [16] 2026-10-11T15:00:00+00:00 -> 0.88 m
+  [17] 2026-10-11T16:00:00+00:00 -> 0.88 m
+  [18] 2026-10-11T17:00:00+00:00 -> 0.88 m
+  [19] 2026-10-11T18:00:00+00:00 -> 0.88 m
+  [20] 2026-10-11T19:00:00+00:00 -> 0.9 m
+  [21] 2026-10-11T20:00:00+00:00 -> 0.92 m
+  [22] 2026-10-11T21:00:00+00:00 -> 0.94 m
+  [23] 2026-10-11T22:00:00+00:00 -> 0.96 m
+  [24] 2026-10-11T23:00:00+00:00 -> 1.0 m
+
+OPERATIONAL LIMITATIONS & DISCLAIMERS:
+  [1] Wave height is a single sea-state parameter and does NOT determine overall fishing, maritime, or navigation safety.
+  [2] Small craft and fishing vessel safety requires evaluating wind velocity, wind gusts, wave steepness, swell direction, tidal streams, currents, and vessel tonnage.
+  [3] Values represent numerical weather prediction model output (Open-Meteo Marine / ECMWF / Meteo-France) and may differ from localized in-situ oceanographic buoy observations.
+  [4] ORCA does not issue official government meteorological warnings, cyclone alerts, or severe weather clearances. Mariners must consult the India Meteorological Department (IMD) / NOAA / Coast Guard before sailing.

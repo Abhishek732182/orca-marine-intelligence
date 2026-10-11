@@ -1,0 +1,163 @@
+{
+  "agent_name": "ORCA Marine Intelligence Agent",
+  "workflow_id": "orca-wf-f46a852a7eef",
+  "status": "valid",
+  "location": {
+    "location_name": "Offshore Arabian Sea (Goa)",
+    "requested_latitude": 15.0,
+    "requested_longitude": 72.0,
+    "grid_latitude": 15.041664,
+    "grid_longitude": 71.95834
+  },
+  "measurements": {
+    "variable": "wave_height",
+    "unit": "m",
+    "sample_count": 24,
+    "min_wave_height_m": 0.88,
+    "max_wave_height_m": 1.0,
+    "avg_wave_height_m": 0.91,
+    "latest_wave_height_m": 1.0,
+    "timeseries": [
+      {
+        "timestamp": "2026-10-11T00:00:00+00:00",
+        "wave_height": 0.96
+      },
+      {
+        "timestamp": "2026-10-11T01:00:00+00:00",
+        "wave_height": 0.94
+      },
+      {
+        "timestamp": "2026-10-11T02:00:00+00:00",
+        "wave_height": 0.94
+      },
+      {
+        "timestamp": "2026-10-11T03:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T04:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T05:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T06:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T07:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T08:00:00+00:00",
+        "wave_height": 0.9
+      },
+      {
+        "timestamp": "2026-10-11T09:00:00+00:00",
+        "wave_height": 0.9
+      },
+      {
+        "timestamp": "2026-10-11T10:00:00+00:00",
+        "wave_height": 0.9
+      },
+      {
+        "timestamp": "2026-10-11T11:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T12:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T13:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T14:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T15:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T16:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T17:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T18:00:00+00:00",
+        "wave_height": 0.88
+      },
+      {
+        "timestamp": "2026-10-11T19:00:00+00:00",
+        "wave_height": 0.9
+      },
+      {
+        "timestamp": "2026-10-11T20:00:00+00:00",
+        "wave_height": 0.92
+      },
+      {
+        "timestamp": "2026-10-11T21:00:00+00:00",
+        "wave_height": 0.94
+      },
+      {
+        "timestamp": "2026-10-11T22:00:00+00:00",
+        "wave_height": 0.96
+      },
+      {
+        "timestamp": "2026-10-11T23:00:00+00:00",
+        "wave_height": 1.0
+      }
+    ]
+  },
+  "units": {
+    "wave_height": "m"
+  },
+  "timestamps": {
+    "retrieved_at": "2026-10-11T12:20:14.664222+00:00",
+    "forecast_start": "2026-10-11T00:00:00+00:00",
+    "forecast_end": "2026-10-11T23:00:00+00:00",
+    "forecast_time_window_hours": 24
+  },
+  "source": {
+    "provider": "open-meteo-marine",
+    "model_timezone": "GMT",
+    "attribution": "Open-Meteo Marine Weather API (ECMWF / Meteo-France models)",
+    "citation": "WMO Code Table 3700 / Douglas Sea Scale; Open-Meteo Marine API (https://open-meteo.com/)"
+  },
+  "validation_status": {
+    "status": "valid",
+    "is_valid": true,
+    "issues": [],
+    "quality_flags": [
+      "forecast_data"
+    ],
+    "records_analyzed": 24
+  },
+  "analysis": {
+    "sea_state_code": 3,
+    "sea_state_category": "Slight",
+    "rule_standard": "WMO Code Table 3700 / Douglas Sea Scale",
+    "advisory": "Advisory for Offshore Arabian Sea (Goa) (15.0000 deg N, 72.0000 deg E): Forecast significant wave heights over the next 24h range from 0.88 m to 1.00 m (average 0.91 m, latest 1.00 m). Sea conditions are classified as 'Slight' under WMO Code Table 3700 (Sea State Code 3). Operational Notice: Wave height alone does not constitute a maritime navigation or fishing safety clearance; mariners must inspect wind speeds, swell direction, tidal currents, and official hydrographic notices before proceeding.",
+    "generation_mode": "deterministic"
+  },
+  "limitations": [
+    "Wave height is a single sea-state parameter and does NOT determine overall fishing, maritime, or navigation safety.",
+    "Small craft and fishing vessel safety requires evaluating wind velocity, wind gusts, wave steepness, swell direction, tidal streams, currents, and vessel tonnage.",
+    "Values represent numerical weather prediction model output (Open-Meteo Marine / ECMWF / Meteo-France) and may differ from localized in-situ oceanographic buoy observations.",
+    "ORCA does not issue official government meteorological warnings, cyclone alerts, or severe weather clearances. Mariners must consult the India Meteorological Department (IMD) / NOAA / Coast Guard before sailing."
+  ],
+  "step_progress": [
+    "[STEP 1/5] Validated input: location='Offshore Arabian Sea (Goa)', lat=15.0000, lon=72.0000, window=24h",
+    "[STEP 2/5] Successfully retrieved 24 wave-height records from open-meteo-marine.",
+    "[STEP 3/5] Normalized and validated 24 records. Status: valid",
+    "[STEP 4/5] Analyzed wave conditions: Range=0.88m-1.0m, Avg=0.91m. WMO Sea State: Code 3 (Slight)",
+    "[STEP 5/5] Advisory report synthesized (Generation mode: deterministic)."
+  ]
+}
