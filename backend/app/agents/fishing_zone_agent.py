@@ -34,6 +34,7 @@ from app.agents.species_rules import (
     evaluate_thermal_suitability,
     lookup_species,
 )
+from app.data_sources.base import MarineDataProvider
 from app.data_sources.open_meteo_marine import OpenMeteoMarineProvider
 from app.evidence.freshness import is_stale
 from app.evidence.validator import validate_evidence
@@ -73,7 +74,7 @@ class FishingZoneAgent:
 
     def __init__(
         self,
-        provider: OpenMeteoMarineProvider | None = None,
+        provider: MarineDataProvider | OpenMeteoMarineProvider | None = None,
         fisheries_provider: Any | None = None,
     ) -> None:
         self.provider = provider or OpenMeteoMarineProvider()
@@ -299,7 +300,22 @@ class FishingZoneAgent:
         fresh_valid_chla: list[EvidenceRecord] = []
         fresh_valid_bio: list[EvidenceRecord] = []
 
+        all_wave_records: list[EvidenceRecord] = []
+        all_sst_records: list[EvidenceRecord] = []
+        all_chla_records: list[EvidenceRecord] = []
+        all_bio_records: list[EvidenceRecord] = []
+
         for rec in records:
+            var_cand = (rec.variable or "").lower()
+            if var_cand in ["wave_height", "wave_height_m", "hs"]:
+                all_wave_records.append(rec)
+            elif var_cand in ["sea_surface_temperature", "sst", "temperature_c"]:
+                all_sst_records.append(rec)
+            elif var_cand in ["chlorophyll_a", "chla", "chlor_a"]:
+                all_chla_records.append(rec)
+            elif var_cand in ["fish_biomass", "biomass", "potential_fishing_zone"]:
+                all_bio_records.append(rec)
+
             issues = validate_evidence(rec, now=now_utc)
             is_forecast = "forecast_data" in (rec.quality_flags or [])
             stale = is_stale(rec, now=now_utc, allow_forecast=is_forecast)
@@ -501,7 +517,7 @@ class FishingZoneAgent:
                     "rejected_records": rejected_records,
                     "rejected_records_reasons": sorted(list({r["reason"] for r in rejected_records})),
                 },
-                observations={"wave_records_count": 0, "rejected_records_count": len(rejected_records)},
+                observations={"wave_records_count": 0, "accepted_records_count": 0, "rejected_records_count": len(rejected_records)},
                 analysis={
                     "zone_suitability": "INSUFFICIENT_EVIDENCE",
                     "operational_feasibility": "UNVERIFIED",
@@ -743,6 +759,38 @@ class FishingZoneAgent:
         def _build_provenance(rec: EvidenceRecord | None) -> dict[str, Any] | None:
             if not rec:
                 return None
+            is_rec_forecast = "forecast_data" in (rec.quality_flags or [])
+            stale = is_stale(rec, now=now_utc, allow_forecast=is_rec_forecast)
+            freshness_status = "missing" if rec.observed_at is None else ("stale" if stale else "valid")
+            sensor_desc = (
+                rec.metadata.get("sensor_description")
+                or rec.metadata.get("sensor_dataset")
+                or (
+                    "Numerical ocean wave/SST model"
+                    if "open_meteo" in rec.source
+                    else "Satellite remote sensing sensor"
+                )
+            )
+            req_lat = rec.metadata.get("requested_latitude")
+            if req_lat is None:
+                req_lat = lat
+            req_lon = rec.metadata.get("requested_longitude")
+            if req_lon is None:
+                req_lon = lon
+
+            is_cached = (
+                rec.metadata.get("is_cached_snapshot", False)
+                or rec.metadata.get("is_offline_fixture", False)
+                or "cached_offline_snapshot" in (rec.quality_flags or [])
+                or "offline_fixture" in (rec.quality_flags or [])
+            )
+            if is_cached:
+                provenance_status = "CACHED_OBSERVATION"
+            elif stale:
+                provenance_status = "STALE_OBSERVATION"
+            else:
+                provenance_status = "LIVE_VALIDATED"
+
             return {
                 "source": rec.source,
                 "source_record_id": rec.source_record_id,
@@ -752,8 +800,12 @@ class FishingZoneAgent:
                 "unit": rec.unit,
                 "latitude": rec.latitude,
                 "longitude": rec.longitude,
+                "requested_latitude": req_lat,
+                "requested_longitude": req_lon,
+                "freshness_status": freshness_status,
+                "sensor_description": sensor_desc,
                 "quality_flags": rec.quality_flags or [],
-                "provenance_status": "VERIFIED_FRESH_OBSERVATION",
+                "provenance_status": provenance_status,
             }
 
         evidence_provenance = {
@@ -816,6 +868,20 @@ class FishingZoneAgent:
             if any(r.get("variable") in ["wave_height", "wave_height_m", "hs"] for r in rejected_records):
                 warnings.append("One or more wave height records were null or physically invalid and were excluded.")
 
+        # Divergence / conflict warnings between craft operability and biological habitat
+        if operational_feasibility == "FAVORABLE" and thermal_eval.get("thermal_suitability") in ("UNFAVORABLE", "UNFAVORABLE (GENERAL)"):
+            warnings.append(
+                f"CONFLICT / DIVERGENCE: Physical wave conditions are FAVORABLE (< 1.25 m) for craft operation, "
+                f"but observed sea surface temperature ({observed_sst:.1f}°C) is UNFAVORABLE (outside thermal range for target species). "
+                f"Favorable sea-state does not imply biological habitat suitability or fish availability."
+            )
+
+        if operational_feasibility == "HAZARDOUS" and thermal_eval.get("thermal_suitability") in ("OPTIMAL", "FAVORABLE (GENERAL)"):
+            warnings.append(
+                f"CONFLICT / DIVERGENCE: Sea surface temperature ({observed_sst:.1f}°C) indicates suitable thermal habitat, "
+                f"but physical sea state is HAZARDOUS (max wave height {max_wave_m:.2f} m). Vessel safety takes precedence over biological potential."
+            )
+
         # Structured response construction
         observations_payload: dict[str, Any] = {
             "max_wave_height_m": round(max_wave_m, 2),
@@ -866,6 +932,16 @@ class FishingZoneAgent:
                 "sea_state_code": sea_state["wmo_code"],
                 "sea_state_category": sea_state["category"],
             },
+            "environmental_habitat_indicators": {
+                "sea_surface_temperature_c": round(observed_sst, 2) if observed_sst is not None else None,
+                "thermal_suitability": thermal_eval.get("thermal_suitability"),
+                "thermal_evaluation_rationale": thermal_eval.get("rationale"),
+                "optimal_range_c": thermal_eval.get("optimal_range_c"),
+                "tolerable_range_c": thermal_eval.get("tolerable_range_c"),
+                "chlorophyll_a_mg_m3": round(observed_chla, 2) if observed_chla is not None else None,
+                "productivity_regime": chla_eval.get("status"),
+                "productivity_rationale": chla_eval.get("rationale"),
+            },
             "verified_fish_distribution": {
                 "status": verified_dist_status,
                 "biomass_data_available": has_verified_fisheries_evidence and observed_biomass is not None,
@@ -904,9 +980,33 @@ class FishingZoneAgent:
         is_offline = any(
             "cached_offline_snapshot" in (r.quality_flags or [])
             or "offline_fixture" in (r.quality_flags or [])
+            or r.metadata.get("is_cached_snapshot", False)
+            or r.metadata.get("is_offline_fixture", False)
             for r in raw_records
         )
         active_mode = "offline_cached" if is_offline else "live"
+
+        def _classify_state(fresh_list: list, all_list: list, var_name: str) -> str:
+            if fresh_list:
+                rec = fresh_list[-1]
+                if any(f in (rec.quality_flags or []) for f in ("cached_offline_snapshot", "offline_fixture")) or rec.metadata.get("is_cached_snapshot"):
+                    return "CACHED_OBSERVATION"
+                return "LIVE_VALIDATED"
+            if all_list:
+                rec = all_list[-1]
+                if any(f in (rec.quality_flags or []) for f in ("cached_offline_snapshot", "offline_fixture")) or rec.metadata.get("is_cached_snapshot"):
+                    return "CACHED_OBSERVATION"
+                return "STALE_OBSERVATION"
+            if var_name in ("chlorophyll_a", "fish_biomass") and self.fisheries_provider is None:
+                return "UNAVAILABLE_PROVIDER"
+            return "EMPTY_RESULT"
+
+        provider_states = {
+            "wave_height": _classify_state(fresh_valid_wave, all_wave_records, "wave_height"),
+            "sea_surface_temperature": _classify_state(fresh_valid_sst, all_sst_records, "sea_surface_temperature"),
+            "chlorophyll_a": _classify_state(fresh_valid_chla, all_chla_records, "chlorophyll_a"),
+            "fish_biomass": _classify_state(fresh_valid_bio, all_bio_records, "fish_biomass"),
+        }
 
         # Preserved data source information
         data_source_payload: dict[str, Any] = {
@@ -916,6 +1016,7 @@ class FishingZoneAgent:
             "active_data_mode": active_mode,
             "is_offline_fixture": is_offline,
             "connected_providers": CONNECTED_PROVIDERS,
+            "provider_states": provider_states,
             "contributing_sources": sorted(list(contributing_sources)),
             "missing_providers": MISSING_FISHERIES_PROVIDERS,
             "recommended_integrations": RECOMMENDED_INTEGRATIONS,

@@ -423,11 +423,42 @@ class OrchestratorAnalyzeRequest(BaseModel):
         ge=0.0,
         description="Optional observed precipitation in mm/h",
     )
+    query: str | None = Field(
+        default=None,
+        description="Optional natural-language mission query or prompt for LLM-based planning and synthesis",
+    )
+    message: str | None = Field(
+        default=None,
+        description="Alias for query",
+    )
 
     @model_validator(mode="before")
     @classmethod
     def reconcile_origin_and_destination(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            # Normalize query alias
+            if data.get("message") and not data.get("query"):
+                data["query"] = data["message"]
+
+            query_text = data.get("query")
+            # If coordinates are missing but a natural-language query is provided, attempt extraction
+            if query_text and (data.get("latitude") is None and data.get("origin_latitude") is None):
+                from app.agents.mission_planner import _extract_location_and_endpoints
+                t_olat, t_olon, t_oname, t_dlat, t_dlon, t_dname = _extract_location_and_endpoints(query_text)
+                if t_olat is not None and t_olon is not None:
+                    data["latitude"] = t_olat
+                    data["longitude"] = t_olon
+                    data["origin_latitude"] = t_olat
+                    data["origin_longitude"] = t_olon
+                    if t_oname and not data.get("origin_name"):
+                        data["origin_name"] = t_oname
+                        data["location_name"] = t_oname
+                if t_dlat is not None and t_dlon is not None and data.get("destination_latitude") is None:
+                    data["destination_latitude"] = t_dlat
+                    data["destination_longitude"] = t_dlon
+                    if t_dname and not data.get("destination_name"):
+                        data["destination_name"] = t_dname
+
             # 1. Map origin fields
             if data.get("origin_latitude") is not None and data.get("latitude") is None:
                 data["latitude"] = data["origin_latitude"]
@@ -444,10 +475,10 @@ class OrchestratorAnalyzeRequest(BaseModel):
             elif data.get("location_name") and not data.get("origin_name"):
                 data["origin_name"] = data["location_name"]
 
-            # Validate presence of origin
-            if data.get("latitude") is None and data.get("origin_latitude") is None:
+            # Validate presence of origin when query is not provided
+            if data.get("latitude") is None and data.get("origin_latitude") is None and not query_text:
                 raise ValueError("Origin latitude is required for marine analysis.")
-            if data.get("longitude") is None and data.get("origin_longitude") is None:
+            if data.get("longitude") is None and data.get("origin_longitude") is None and not query_text:
                 raise ValueError("Origin longitude is required for marine analysis.")
 
             # 2. Check destination and identical endpoints
@@ -473,11 +504,16 @@ class OrchestratorAnalyzeResponse(BaseModel):
     """Response schema for ORCA Orchestrator Agent."""
 
     agent: str = "ORCA Orchestrator Agent"
-    status: str  # "success", "partial_failure", "insufficient_evidence", "error"
+    status: str  # "success", "partial_failure", "insufficient_evidence", "error", "clarification_needed"
     user_objective: str
     location: dict[str, Any]
     plan: dict[str, Any]
     summary: str
+    descriptive_synthesis: str | None = None
+    generation_mode: str = "deterministic"
+    clarification_needed: bool = False
+    clarification_prompt: str | None = None
+    missing_inputs: list[str] = Field(default_factory=list)
     composite_safety_risk: dict[str, Any]
     measured_observations: dict[str, Any]
     derived_estimates: dict[str, Any]
@@ -492,4 +528,5 @@ class OrchestratorAnalyzeResponse(BaseModel):
     generated_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+
 

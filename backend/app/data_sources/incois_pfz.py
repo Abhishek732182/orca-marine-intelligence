@@ -40,8 +40,7 @@ def point_in_polygon(x: float, y: float, poly: list[list[float]]) -> bool:
         if y > min(p1y, p2y):
             if y <= max(p1y, p2y):
                 if x <= max(p1x, p2x):
-                    if p1y != p2y:
-                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x if p1y != p2y else p1x
                     if p1x == p2x or x <= xinters:
                         inside = not inside
         p1x, p1y = p2x, p2y
@@ -76,6 +75,7 @@ class IncoisPfzBulletinParser:
         *,
         source_url: str | None = None,
         retrieved_at: datetime | None = None,
+        is_fixture: bool | None = None,
     ) -> list[EvidenceRecord]:
         """Validate and parse INCOIS PFZ GeoJSON FeatureCollection.
         
@@ -83,6 +83,7 @@ class IncoisPfzBulletinParser:
             geojson_data: Raw GeoJSON dict or JSON string.
             source_url: Optional source URL or bulletin identifier.
             retrieved_at: Time the data was retrieved (defaults to now UTC).
+            is_fixture: Explicit boolean indicating offline fixture parsing.
             
         Returns:
             List of valid, deduplicated EvidenceRecord objects.
@@ -93,6 +94,13 @@ class IncoisPfzBulletinParser:
         now_utc = retrieved_at or datetime.now(timezone.utc)
         if now_utc.tzinfo is None:
             now_utc = now_utc.replace(tzinfo=timezone.utc)
+
+        # Detect fixture origin
+        is_fixture_source = (
+            is_fixture
+            if is_fixture is not None
+            else (source_url is not None and any(term in source_url.lower() for term in ["fixture", "sample", "offline"]))
+        )
 
         if isinstance(geojson_data, str):
             try:
@@ -210,7 +218,12 @@ class IncoisPfzBulletinParser:
                 "polygon_coordinates": boundary_polygon if boundary_polygon else None,
                 "target_species": properties.get("target_species") or properties.get("species"),
                 "advisory_text": properties.get("advisory_text") or properties.get("description"),
+                "is_offline_fixture": is_fixture_source,
             }
+
+            base_flags = ["official_government_advisory", "incois_pfz"]
+            if is_fixture_source:
+                base_flags.append("offline_fixture")
 
             # 1. Primary Record: Potential Fishing Zone advisory indicator
             rec_id = f"incois-pfz-{uuid4().hex[:10]}"
@@ -227,10 +240,14 @@ class IncoisPfzBulletinParser:
                 observed_at=observed_at,
                 retrieved_at=now_utc,
                 status="valid",
-                quality_flags=["official_government_advisory", "incois_pfz"],
+                quality_flags=base_flags,
                 metadata=feat_meta,
             )
             records.append(pfz_rec)
+
+            aux_flags = ["incois_satellite_composite", "official_advisory"]
+            if is_fixture_source:
+                aux_flags.append("offline_fixture")
 
             # 2. Auxiliary Record: Sea Surface Temperature if explicitly reported in bulletin
             sst_val = properties.get("sst_c") or properties.get("sea_surface_temperature")
@@ -251,7 +268,7 @@ class IncoisPfzBulletinParser:
                                 observed_at=observed_at,
                                 retrieved_at=now_utc,
                                 status="valid",
-                                quality_flags=["incois_satellite_composite", "official_advisory"],
+                                quality_flags=aux_flags,
                                 metadata=feat_meta,
                             )
                         )
@@ -277,7 +294,7 @@ class IncoisPfzBulletinParser:
                                 observed_at=observed_at,
                                 retrieved_at=now_utc,
                                 status="valid",
-                                quality_flags=["incois_satellite_composite", "official_advisory"],
+                                quality_flags=aux_flags,
                                 metadata=feat_meta,
                             )
                         )

@@ -84,6 +84,23 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
             "Sensitive to extreme salinity swings and bottom thermal variations."
         ),
     },
+    "pomfret": {
+        "key": "pomfret",
+        "common_name": "Silver Pomfret",
+        "scientific_name": "Pampus argenteus",
+        "family": "Stromateidae",
+        "aliases": ["pomfret", "silver pomfret", "pampus", "pampus argenteus", "paplet", "white pomfret"],
+        "sst_optimal_min_c": 25.0,
+        "sst_optimal_max_c": 29.5,
+        "sst_tolerable_min_c": 22.0,
+        "sst_tolerable_max_c": 31.0,
+        "depth_range_m": "15-60 m (coastal neritic, benthopelagic)",
+        "citation": "CMFRI Species Profile / Marine Fisheries Information Service No. 165",
+        "habitat_notes": (
+            "Schooling benthopelagic species in coastal waters over muddy and sandy substrates. "
+            "Feeds on ctenophores, salps, copepods, and zooplankton. Commercially important along West Coast India."
+        ),
+    },
 }
 
 

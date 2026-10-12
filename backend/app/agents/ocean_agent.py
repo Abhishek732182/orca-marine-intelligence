@@ -112,8 +112,31 @@ class OceanAgent:
                 ],
             )
 
-        # 4. Limit records to requested forecast window
-        window_records = records[:window_hours] if len(records) > window_hours else records
+        # 4. Filter for wave-height records and limit to requested forecast window
+        wave_records = [
+            r for r in records
+            if (r.variable or "").lower() in ("wave_height", "wave_height_m", "hs")
+        ]
+        if not wave_records:
+            return OceanAnalyzeResponse(
+                status="insufficient_evidence",
+                location={
+                    "location_name": loc_name,
+                    "requested_latitude": lat,
+                    "requested_longitude": lon,
+                },
+                data_source={"provider": self.provider.provider_name},
+                observations={"sample_count": 0, "wave_height_m": None, "timeseries": []},
+                analysis={
+                    "sea_state_code": None,
+                    "sea_state_category": "UNKNOWN",
+                    "wmo_sea_state": None,
+                    "summary": "No wave-height records returned by provider.",
+                },
+                warnings=["No wave-height records found in provider evidence."],
+            )
+
+        window_records = wave_records[:window_hours] if len(wave_records) > window_hours else wave_records
 
         # 5. Validate records and collect any genuine quality issues
         all_issues: list[str] = []

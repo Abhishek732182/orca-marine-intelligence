@@ -3,13 +3,14 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.agents.fishing_zone_agent import FishingZoneAgent
+from app.data_sources.ingestion_worker import get_fisheries_worker
 from app.schemas.agent_schemas import (
     FishingZoneAnalyzeRequest,
     FishingZoneAnalyzeResponse,
 )
 
 router = APIRouter(prefix="/agents/fishing-zone", tags=["Fishing Zone Agent"])
-agent = FishingZoneAgent()
+agent = FishingZoneAgent(fisheries_provider=get_fisheries_worker())
 
 
 @router.post(

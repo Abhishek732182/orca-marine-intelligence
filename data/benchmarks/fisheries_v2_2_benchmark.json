@@ -1,0 +1,523 @@
+{
+  "benchmark_metadata": {
+    "benchmark_version": "v2.2",
+    "benchmark_id": "orca-fisheries-benchmark-v2.2",
+    "created_at": "2026-10-12T18:00:00Z",
+    "reference_clock_utc": "2026-10-12T04:00:00Z",
+    "clock_skew_tolerance_seconds": 300.0,
+    "spatial_mismatch_threshold_km": 50.0,
+    "description": "Deterministic evaluation dataset and safeguard benchmark for ORCA Fisheries Intelligence v2.2",
+    "partitions": [
+      "verified_environmental",
+      "offline_fixture_catalog",
+      "safeguard_challenge"
+    ],
+    "limitations": [
+      "No in-situ commercial catch logs or acoustic trawl surveys exist in the operational repository.",
+      "Ground-truth biological presence/absence labels are absent; classification accuracy (Precision/Recall/F1) cannot be fabricated.",
+      "Evaluates environmental habitat bounds and safeguard robustness only."
+    ]
+  },
+  "verified_environmental": [
+    {
+      "station_id": "IND-GOA-01",
+      "station_name": "Goa Offshore Waters",
+      "target_species": "mackerel",
+      "query_coordinates": {
+        "latitude": 15.0,
+        "longitude": 72.0
+      },
+      "observations": [
+        {
+          "evidence_id": "env-goa-wave-01",
+          "source": "open-meteo-marine",
+          "variable": "wave_height",
+          "value": 1.1,
+          "unit": "m",
+          "latitude": 15.0,
+          "longitude": 72.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["forecast_data"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-goa-sst-01",
+          "source": "open-meteo-marine",
+          "variable": "sea_surface_temperature",
+          "value": 28.5,
+          "unit": "degC",
+          "latitude": 15.0,
+          "longitude": 72.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["measured_numerical_sst"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-goa-chla-01",
+          "source": "noaa_coastwatch_erddap",
+          "variable": "chlorophyll_a",
+          "value": 0.65,
+          "unit": "mg/m^3",
+          "latitude": 15.0,
+          "longitude": 72.0,
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["satellite_remote_sensing", "viirs_daily"],
+          "is_fixture": false,
+          "is_synthetic": false
+        }
+      ],
+      "biological_presence_label": null,
+      "biological_telemetry_source": null
+    },
+    {
+      "station_id": "IND-BOM-01",
+      "station_name": "Mumbai Outer Shelf",
+      "target_species": "bombay duck",
+      "query_coordinates": {
+        "latitude": 18.9,
+        "longitude": 72.5
+      },
+      "observations": [
+        {
+          "evidence_id": "env-bom-wave-01",
+          "source": "open-meteo-marine",
+          "variable": "wave_height",
+          "value": 1.4,
+          "unit": "m",
+          "latitude": 18.9,
+          "longitude": 72.5,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["forecast_data"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-bom-sst-01",
+          "source": "open-meteo-marine",
+          "variable": "sea_surface_temperature",
+          "value": 27.8,
+          "unit": "degC",
+          "latitude": 18.9,
+          "longitude": 72.5,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["measured_numerical_sst"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-bom-chla-01",
+          "source": "noaa_coastwatch_erddap",
+          "variable": "chlorophyll_a",
+          "value": 0.95,
+          "unit": "mg/m^3",
+          "latitude": 18.9,
+          "longitude": 72.5,
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["satellite_remote_sensing", "viirs_daily"],
+          "is_fixture": false,
+          "is_synthetic": false
+        }
+      ],
+      "biological_presence_label": null,
+      "biological_telemetry_source": null
+    },
+    {
+      "station_id": "IND-KRW-01",
+      "station_name": "Karwar Coastal Waters",
+      "target_species": "sardine",
+      "query_coordinates": {
+        "latitude": 14.8,
+        "longitude": 73.5
+      },
+      "observations": [
+        {
+          "evidence_id": "env-krw-wave-01",
+          "source": "open-meteo-marine",
+          "variable": "wave_height",
+          "value": 0.9,
+          "unit": "m",
+          "latitude": 14.8,
+          "longitude": 73.5,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["forecast_data"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-krw-sst-01",
+          "source": "open-meteo-marine",
+          "variable": "sea_surface_temperature",
+          "value": 28.8,
+          "unit": "degC",
+          "latitude": 14.8,
+          "longitude": 73.5,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["measured_numerical_sst"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-krw-chla-01",
+          "source": "noaa_coastwatch_erddap",
+          "variable": "chlorophyll_a",
+          "value": 1.2,
+          "unit": "mg/m^3",
+          "latitude": 14.8,
+          "longitude": 73.5,
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["satellite_remote_sensing", "viirs_daily"],
+          "is_fixture": false,
+          "is_synthetic": false
+        }
+      ],
+      "biological_presence_label": null,
+      "biological_telemetry_source": null
+    },
+    {
+      "station_id": "IND-MNG-01",
+      "station_name": "Mangalore Deep Shelf",
+      "target_species": "tuna",
+      "query_coordinates": {
+        "latitude": 12.8,
+        "longitude": 74.0
+      },
+      "observations": [
+        {
+          "evidence_id": "env-mng-wave-01",
+          "source": "open-meteo-marine",
+          "variable": "wave_height",
+          "value": 1.2,
+          "unit": "m",
+          "latitude": 12.8,
+          "longitude": 74.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["forecast_data"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-mng-sst-01",
+          "source": "open-meteo-marine",
+          "variable": "sea_surface_temperature",
+          "value": 28.2,
+          "unit": "degC",
+          "latitude": 12.8,
+          "longitude": 74.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["measured_numerical_sst"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-mng-chla-01",
+          "source": "noaa_coastwatch_erddap",
+          "variable": "chlorophyll_a",
+          "value": 0.78,
+          "unit": "mg/m^3",
+          "latitude": 12.8,
+          "longitude": 74.0,
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["satellite_remote_sensing", "viirs_daily"],
+          "is_fixture": false,
+          "is_synthetic": false
+        }
+      ],
+      "biological_presence_label": null,
+      "biological_telemetry_source": null
+    },
+    {
+      "station_id": "IND-VRL-01",
+      "station_name": "Veraval Coast (Saurashtra)",
+      "target_species": "mackerel",
+      "query_coordinates": {
+        "latitude": 20.8,
+        "longitude": 69.8
+      },
+      "observations": [
+        {
+          "evidence_id": "env-vrl-wave-01",
+          "source": "open-meteo-marine",
+          "variable": "wave_height",
+          "value": 1.6,
+          "unit": "m",
+          "latitude": 20.8,
+          "longitude": 69.8,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["forecast_data"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-vrl-sst-01",
+          "source": "open-meteo-marine",
+          "variable": "sea_surface_temperature",
+          "value": 26.5,
+          "unit": "degC",
+          "latitude": 20.8,
+          "longitude": 69.8,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["measured_numerical_sst"],
+          "is_fixture": false,
+          "is_synthetic": false
+        },
+        {
+          "evidence_id": "env-vrl-chla-01",
+          "source": "noaa_coastwatch_erddap",
+          "variable": "chlorophyll_a",
+          "value": 0.45,
+          "unit": "mg/m^3",
+          "latitude": 20.8,
+          "longitude": 69.8,
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": ["satellite_remote_sensing", "viirs_daily"],
+          "is_fixture": false,
+          "is_synthetic": false
+        }
+      ],
+      "biological_presence_label": null,
+      "biological_telemetry_source": null
+    }
+  ],
+  "offline_fixture_catalog": [
+    {
+      "fixture_id": "fix-incois-goa-01",
+      "bulletin_id": "INCOIS-PFZ-GOA-2026-10-12",
+      "source": "incois-pfz-bulletin",
+      "geometry_type": "Polygon",
+      "representative_coordinates": {
+        "latitude": 15.45,
+        "longitude": 73.1
+      },
+      "valid_from": "2026-10-12T00:00:00Z",
+      "valid_to": "2026-10-15T00:00:00Z",
+      "reported_sst_c": 28.4,
+      "reported_chlorophyll_mg_m3": 0.85,
+      "target_species": ["Mackerel", "Tuna", "Sardine"],
+      "confidence": "HIGH",
+      "is_offline_fixture": true,
+      "quality_flags": ["official_government_advisory", "incois_pfz", "offline_fixture"],
+      "operational_baseline_eligible": false
+    },
+    {
+      "fixture_id": "fix-incois-goa-02",
+      "bulletin_id": "INCOIS-PFZ-GOA-2026-10-12",
+      "source": "incois-pfz-bulletin",
+      "geometry_type": "Point",
+      "representative_coordinates": {
+        "latitude": 14.8,
+        "longitude": 73.2
+      },
+      "valid_from": "2026-10-12T00:00:00Z",
+      "valid_to": "2026-10-15T00:00:00Z",
+      "reported_sst_c": 28.1,
+      "reported_chlorophyll_mg_m3": 0.92,
+      "target_species": ["Mackerel", "Carangids"],
+      "confidence": "HIGH",
+      "is_offline_fixture": true,
+      "quality_flags": ["official_government_advisory", "incois_pfz", "offline_fixture"],
+      "operational_baseline_eligible": false
+    }
+  ],
+  "safeguard_challenge": [
+    {
+      "case_id": "case-temporal-leakage-future",
+      "intended_safeguard": "temporal_leakage_rejection",
+      "description": "Satellite observation timestamp is 2 hours ahead of reference clock without forecast flag.",
+      "is_synthetic": true,
+      "record": {
+        "evidence_id": "syn-leakage-01",
+        "source": "synthetic_satellite_source",
+        "variable": "chlorophyll_a",
+        "value": 0.75,
+        "unit": "mg/m^3",
+        "latitude": 15.0,
+        "longitude": 72.0,
+        "observed_at": "2026-10-12T06:00:00Z",
+        "retrieved_at": "2026-10-12T03:00:00Z",
+        "status": "valid",
+        "quality_flags": ["satellite_remote_sensing"],
+        "metadata": {"test_case": "temporal_future_obs"}
+      },
+      "expected_outcome": "REJECT"
+    },
+    {
+      "case_id": "case-temporal-obs-after-retrieval",
+      "intended_safeguard": "temporal_leakage_rejection",
+      "description": "Observation timestamp occurs after recorded retrieval time.",
+      "is_synthetic": true,
+      "record": {
+        "evidence_id": "syn-leakage-02",
+        "source": "synthetic_satellite_source",
+        "variable": "sea_surface_temperature",
+        "value": 28.0,
+        "unit": "degC",
+        "latitude": 15.0,
+        "longitude": 72.0,
+        "observed_at": "2026-10-12T03:30:00Z",
+        "retrieved_at": "2026-10-12T02:00:00Z",
+        "status": "valid",
+        "quality_flags": ["satellite_remote_sensing"],
+        "metadata": {"test_case": "temporal_obs_after_retrieval"}
+      },
+      "expected_outcome": "REJECT"
+    },
+    {
+      "case_id": "case-spatial-mismatch",
+      "intended_safeguard": "spatial_mismatch_rejection",
+      "description": "Target coordinate query is Goa (15.0N, 72.0E), but observation coordinate is Mumbai (18.9N, 72.8E) — 441 km distance exceeding 50 km threshold.",
+      "is_synthetic": true,
+      "query_location": {
+        "latitude": 15.0,
+        "longitude": 72.0
+      },
+      "record": {
+        "evidence_id": "syn-spatial-01",
+        "source": "synthetic_coastal_buoy",
+        "variable": "sea_surface_temperature",
+        "value": 28.4,
+        "unit": "degC",
+        "latitude": 18.9,
+        "longitude": 72.8,
+        "observed_at": "2026-10-12T02:00:00Z",
+        "retrieved_at": "2026-10-12T03:00:00Z",
+        "status": "valid",
+        "quality_flags": ["in_situ_buoy"],
+        "metadata": {"test_case": "spatial_mismatch_441km"}
+      },
+      "expected_outcome": "REJECT"
+    },
+    {
+      "case_id": "case-duplicate-conflicting",
+      "intended_safeguard": "conflicting_duplicate_handling",
+      "description": "Two observations for identical location, time, and variable reporting conflicting SST values (28.5C vs 21.0C). Neither should be cherry-picked.",
+      "is_synthetic": true,
+      "records": [
+        {
+          "evidence_id": "syn-dup-01a",
+          "source": "provider_a",
+          "variable": "sea_surface_temperature",
+          "value": 28.5,
+          "unit": "degC",
+          "latitude": 15.0,
+          "longitude": 72.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": [],
+          "metadata": {}
+        },
+        {
+          "evidence_id": "syn-dup-01b",
+          "source": "provider_b",
+          "variable": "sea_surface_temperature",
+          "value": 21.0,
+          "unit": "degC",
+          "latitude": 15.0,
+          "longitude": 72.0,
+          "observed_at": "2026-10-12T02:00:00Z",
+          "retrieved_at": "2026-10-12T03:00:00Z",
+          "status": "valid",
+          "quality_flags": [],
+          "metadata": {}
+        }
+      ],
+      "expected_outcome": "FLAG_CONFLICT_OR_QUARANTINE"
+    },
+    {
+      "case_id": "case-stale-satellite-observation",
+      "intended_safeguard": "stale_evidence_exclusion",
+      "description": "Satellite chlorophyll-a observation observed 48 hours ago exceeding the 24-hour freshness limit.",
+      "is_synthetic": true,
+      "record": {
+        "evidence_id": "syn-stale-01",
+        "source": "noaa_coastwatch_erddap",
+        "variable": "chlorophyll_a",
+        "value": 0.85,
+        "unit": "mg/m^3",
+        "latitude": 15.0,
+        "longitude": 72.0,
+        "observed_at": "2026-10-10T02:00:00Z",
+        "retrieved_at": "2026-10-12T03:00:00Z",
+        "status": "stale",
+        "quality_flags": ["satellite_remote_sensing"],
+        "metadata": {"test_case": "stale_48h"}
+      },
+      "expected_outcome": "EXCLUDE_FROM_BASELINE"
+    },
+    {
+      "case_id": "case-missing-biological-label",
+      "intended_safeguard": "missing_labels_transparency",
+      "description": "High-quality oceanographic observations with missing biological presence ground truth. Must report not evaluable rather than fabricating accuracy.",
+      "is_synthetic": false,
+      "record": {
+        "evidence_id": "syn-bio-missing-01",
+        "source": "open-meteo-marine",
+        "variable": "sea_surface_temperature",
+        "value": 28.5,
+        "unit": "degC",
+        "latitude": 15.0,
+        "longitude": 72.0,
+        "observed_at": "2026-10-12T02:00:00Z",
+        "retrieved_at": "2026-10-12T03:00:00Z",
+        "status": "valid",
+        "quality_flags": ["measured_numerical_sst"],
+        "metadata": {}
+      },
+      "biological_presence": null,
+      "expected_outcome": "NOT_EVALUABLE"
+    },
+    {
+      "case_id": "case-fixture-contamination-probe",
+      "intended_safeguard": "fixture_contamination_prevention",
+      "description": "Record bearing offline_fixture flag attempting to pass into the operational baseline.",
+      "is_synthetic": true,
+      "record": {
+        "evidence_id": "syn-fixture-probe-01",
+        "source": "incois-pfz-bulletin",
+        "variable": "potential_fishing_zone_advisory",
+        "value": "PFZ Advisory Active",
+        "unit": "advisory_bulletin",
+        "latitude": 15.45,
+        "longitude": 73.1,
+        "observed_at": "2026-10-12T00:00:00Z",
+        "retrieved_at": "2026-10-12T03:00:00Z",
+        "status": "valid",
+        "quality_flags": ["official_government_advisory", "offline_fixture"],
+        "metadata": {"is_offline_fixture": true}
+      },
+      "expected_outcome": "BAR_FROM_BASELINE"
+    }
+  ]
+}

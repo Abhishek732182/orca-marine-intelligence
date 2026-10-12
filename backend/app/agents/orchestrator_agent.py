@@ -21,8 +21,14 @@ from app.agents.fishing_zone_agent import FishingZoneAgent
 from app.agents.ocean_agent import OceanAgent
 from app.agents.route_agent import RouteAgent
 from app.agents.safety_risk_agent import SafetyRiskAgent
-from app.agents.weather_agent import WeatherAgent
 from app.agents.sea_state_rules import classify_sea_state
+from app.agents.weather_agent import WeatherAgent
+from app.data_sources.ingestion_worker import get_fisheries_worker
+from app.agents.mission_planner import plan_mission_request
+from app.agents.mission_synthesizer import (
+    generate_deterministic_synthesis,
+    synthesize_mission_advisory,
+)
 from app.schemas.agent_schemas import (
     FishingZoneAnalyzeRequest,
     FishingZoneAnalyzeResponse,
@@ -51,10 +57,10 @@ class OrchestratorState(TypedDict, total=False):
     """LangGraph state representation for mission orchestration."""
 
     # Input request attributes
-    latitude: float
-    longitude: float
-    origin_latitude: float
-    origin_longitude: float
+    latitude: float | None
+    longitude: float | None
+    origin_latitude: float | None
+    origin_longitude: float | None
     location_name: str
     origin_name: str
     forecast_time_window_hours: int
@@ -69,6 +75,14 @@ class OrchestratorState(TypedDict, total=False):
     wave_height_m: float | None
     wind_speed_knots: float | None
     precipitation_mm: float | None
+
+    # Natural-language and planning fields
+    query: str | None
+    clarification_needed: bool
+    clarification_prompt: str | None
+    missing_inputs: list[str]
+    descriptive_synthesis: str | None
+    generation_mode: str
 
     # Workflow tracking
     step_progress: list[str]
@@ -95,6 +109,7 @@ class OrchestratorState(TypedDict, total=False):
     summary: str
 
 
+
 class OrchestratorAgent:
     """ORCA Agent 6: Master Mission Orchestrator."""
 
@@ -109,7 +124,9 @@ class OrchestratorAgent:
         """Initialize orchestrator with injectable specialist agents."""
         self.weather_agent = weather_agent or WeatherAgent()
         self.ocean_agent = ocean_agent or OceanAgent()
-        self.fishing_zone_agent = fishing_zone_agent or FishingZoneAgent()
+        self.fishing_zone_agent = fishing_zone_agent or FishingZoneAgent(
+            fisheries_provider=get_fisheries_worker()
+        )
         self.route_agent = route_agent or RouteAgent()
         self.safety_risk_agent = safety_risk_agent or SafetyRiskAgent()
         self.graph = self._build_graph()
@@ -122,45 +139,79 @@ class OrchestratorAgent:
         builder.add_node("synthesize_advisory", self._synthesize_advisory_node)
 
         builder.add_edge(START, "plan_mission")
-        builder.add_edge("plan_mission", "execute_specialists")
+        builder.add_conditional_edges(
+            "plan_mission",
+            self._route_after_planning,
+            {
+                "execute": "execute_specialists",
+                "synthesize": "synthesize_advisory",
+            },
+        )
         builder.add_edge("execute_specialists", "synthesize_advisory")
         builder.add_edge("synthesize_advisory", END)
 
         return builder.compile()
 
+    def _route_after_planning(self, state: OrchestratorState) -> str:
+        """Route to synthesis immediately if clarification is needed or no agents are planned."""
+        if state.get("clarification_needed", False):
+            return "synthesize"
+        planned = state.get("planned_agents", [])
+        if not planned:
+            return "synthesize"
+        return "execute"
+
     async def _plan_mission_node(self, state: OrchestratorState) -> dict[str, Any]:
-        """Step 1: Determine which specialist agents to invoke based on user objective."""
-        objective = state.get("user_objective", "general_maritime").lower()
-        has_destination = (
-            state.get("destination_latitude") is not None
-            and state.get("destination_longitude") is not None
-        )
+        """Step 1: Determine which specialist agents to invoke based on user objective and query."""
         progress = list(state.get("step_progress", []))
+        query = state.get("query")
+        plan, mode = await plan_mission_request(query, dict(state))
 
-        if objective == "fishing":
-            planned = ["weather", "ocean", "fishing_zone", "safety_risk"]
-            if has_destination:
-                planned.append("route")
-        elif objective == "passage_planning":
-            planned = ["weather", "ocean", "route", "safety_risk"]
-        elif objective == "safety_check":
-            planned = ["weather", "ocean", "safety_risk"]
-        elif objective == "all":
-            planned = ["weather", "ocean", "fishing_zone", "route", "safety_risk"]
-        else:  # general_maritime or fallback
-            objective = "general_maritime"
-            planned = ["weather", "ocean", "fishing_zone", "safety_risk"]
-            if has_destination:
-                planned.append("route")
+        clarification_needed = plan.clarification_needed
+        clarification_prompt = plan.clarification_prompt
+        missing_inputs = list(plan.missing_inputs)
 
-        progress.append(
-            f"[STEP 1/3] Objective '{objective}': planned specialist agents -> {', '.join(planned)}"
-        )
-        return {
-            "user_objective": objective,
-            "planned_agents": planned,
-            "step_progress": progress,
+        updates: dict[str, Any] = {
+            "user_objective": plan.user_objective,
+            "planned_agents": plan.planned_agents,
+            "forecast_time_window_hours": plan.forecast_time_window_hours,
+            "vessel_type": plan.vessel_type,
+            "target_species": plan.target_species or state.get("target_species"),
+            "clarification_needed": clarification_needed,
+            "clarification_prompt": clarification_prompt,
+            "missing_inputs": missing_inputs,
+            "generation_mode": mode,
         }
+
+        if plan.origin_latitude is not None and state.get("origin_latitude") is None:
+            updates["latitude"] = plan.origin_latitude
+            updates["origin_latitude"] = plan.origin_latitude
+        if plan.origin_longitude is not None and state.get("origin_longitude") is None:
+            updates["longitude"] = plan.origin_longitude
+            updates["origin_longitude"] = plan.origin_longitude
+        if plan.origin_name and not state.get("origin_name"):
+            updates["origin_name"] = plan.origin_name
+            updates["location_name"] = plan.origin_name
+
+        if plan.destination_latitude is not None and state.get("destination_latitude") is None:
+            updates["destination_latitude"] = plan.destination_latitude
+        if plan.destination_longitude is not None and state.get("destination_longitude") is None:
+            updates["destination_longitude"] = plan.destination_longitude
+        if plan.destination_name and not state.get("destination_name"):
+            updates["destination_name"] = plan.destination_name
+
+        if clarification_needed:
+            progress.append(
+                f"[STEP 1/3] Clarification required ({mode}): missing {', '.join(missing_inputs) or 'parameters'}. "
+                f"Halting tool execution to prevent invalid operations."
+            )
+        else:
+            progress.append(
+                f"[STEP 1/3] Objective '{plan.user_objective}' ({mode}): planned specialist agents -> {', '.join(plan.planned_agents)}"
+            )
+
+        updates["step_progress"] = progress
+        return updates
 
     async def _execute_specialists_node(self, state: OrchestratorState) -> dict[str, Any]:
         """Step 2: Concurrently invoke selected specialist agents in parallel."""
@@ -171,8 +222,8 @@ class OrchestratorAgent:
         errors: dict[str, str] = {}
         missing_evidence: list[str] = []
 
-        lat = state["latitude"]
-        lon = state["longitude"]
+        lat = state.get("latitude")
+        lon = state.get("longitude")
         loc_name = state.get("location_name", "Marine Operational Area")
         window_hours = state.get("forecast_time_window_hours", 24)
         vessel_type = state.get("vessel_type", "small_craft")
@@ -191,13 +242,26 @@ class OrchestratorAgent:
 
         # 2. Ocean Agent task
         if "ocean" in planned:
-            o_req = OceanAnalyzeRequest(
-                latitude=lat,
-                longitude=lon,
-                location_name=loc_name,
-                forecast_time_window_hours=window_hours,
-            )
-            tasks["ocean"] = self.ocean_agent.analyze(o_req)
+            if lat is not None and lon is not None:
+                o_req = OceanAnalyzeRequest(
+                    latitude=lat,
+                    longitude=lon,
+                    location_name=loc_name,
+                    forecast_time_window_hours=window_hours,
+                )
+                tasks["ocean"] = self.ocean_agent.analyze(o_req)
+            else:
+                specialist_responses["ocean"] = {
+                    "agent": "Ocean Agent",
+                    "status": "insufficient_evidence",
+                    "error": "Latitude and longitude required for ocean dynamics analysis.",
+                    "warnings": ["Coordinates omitted from ocean analysis request."],
+                    "observations": {},
+                    "analysis": {},
+                }
+                missing_evidence.append(
+                    "Ocean Agent: Coordinates omitted; ocean dynamics cannot be retrieved."
+                )
 
         # 3. Fishing Zone Agent task
         if "fishing_zone" in planned:
@@ -219,7 +283,7 @@ class OrchestratorAgent:
             orig_name = state.get("origin_name", loc_name)
             dest_name = state.get("destination_name") or "Destination Port"
 
-            if dest_lat is not None and dest_lon is not None:
+            if dest_lat is not None and dest_lon is not None and orig_lat is not None and orig_lon is not None:
                 if orig_lat == dest_lat and orig_lon == dest_lon and not state.get("waypoints"):
                     specialist_responses["route"] = {
                         "agent": "Route Agent",
@@ -243,6 +307,18 @@ class OrchestratorAgent:
                         vessel_speed_knots=state.get("vessel_speed_knots", 12.0),
                     )
                     tasks["route"] = self.route_agent.analyze(r_req)
+            elif orig_lat is None or orig_lon is None:
+                specialist_responses["route"] = {
+                    "agent": "Route Agent",
+                    "status": "insufficient_evidence",
+                    "error": "Origin latitude and longitude required for route passage calculation.",
+                    "warnings": ["Origin coordinates omitted from route request."],
+                    "observations": {},
+                    "analysis": {},
+                }
+                missing_evidence.append(
+                    "Route Agent: Origin coordinates omitted; passage geometry cannot be estimated."
+                )
             else:
                 # Route planned but destination coordinates omitted
                 specialist_responses["route"] = {
@@ -259,16 +335,29 @@ class OrchestratorAgent:
 
         # 5. Safety/Risk Agent task
         if "safety_risk" in planned:
-            sr_req = SafetyRiskAnalyzeRequest(
-                latitude=lat,
-                longitude=lon,
-                location_name=loc_name,
-                vessel_type=vessel_type,
-                wave_height_m=state.get("wave_height_m"),
-                wind_speed_knots=state.get("wind_speed_knots"),
-                precipitation_mm=state.get("precipitation_mm"),
-            )
-            tasks["safety_risk"] = self.safety_risk_agent.analyze(sr_req)
+            if lat is not None and lon is not None:
+                sr_req = SafetyRiskAnalyzeRequest(
+                    latitude=lat,
+                    longitude=lon,
+                    location_name=loc_name,
+                    vessel_type=vessel_type,
+                    wave_height_m=state.get("wave_height_m"),
+                    wind_speed_knots=state.get("wind_speed_knots"),
+                    precipitation_mm=state.get("precipitation_mm"),
+                )
+                tasks["safety_risk"] = self.safety_risk_agent.analyze(sr_req)
+            else:
+                specialist_responses["safety_risk"] = {
+                    "agent": "Safety/Risk Agent",
+                    "status": "insufficient_evidence",
+                    "error": "Latitude and longitude required for safety and risk assessment.",
+                    "warnings": ["Coordinates omitted from safety/risk analysis request."],
+                    "observations": {},
+                    "analysis": {},
+                }
+                missing_evidence.append(
+                    "Safety/Risk Agent: Coordinates omitted; risk assessment cannot be performed."
+                )
 
         # Parallel dispatch
         agent_names = list(tasks.keys())
@@ -611,6 +700,54 @@ class OrchestratorAgent:
         planned_count = len(state.get("planned_agents", []))
         error_count = len(errors)
 
+        if state.get("clarification_needed", False):
+            mission_status = "clarification_needed"
+            clarification_prompt = state.get("clarification_prompt") or "Clarification required: essential parameters are missing."
+            descriptive_synthesis = generate_deterministic_synthesis(
+                location_name=loc_name,
+                latitude=lat,
+                longitude=lon,
+                user_objective=state.get("user_objective", "general_maritime"),
+                vessel_type=state.get("vessel_type", "small_craft"),
+                measured_observations={},
+                derived_estimates={},
+                composite_safety_risk={
+                    "risk_category": "UNKNOWN / INSUFFICIENT EVIDENCE",
+                    "status_headline": "PARAMETERS INCOMPLETE",
+                },
+                warnings=warnings,
+                missing_evidence=list(state.get("missing_inputs", [])),
+                errors=errors,
+                recommendations=["Provide verified coordinates or port destinations before putting to sea."],
+                clarification_needed=True,
+                clarification_prompt=clarification_prompt,
+            )
+            progress.append("[STEP 3/3] Clarification requested -> status='clarification_needed'.")
+            return {
+                "status": mission_status,
+                "summary": descriptive_synthesis,
+                "descriptive_synthesis": descriptive_synthesis,
+                "generation_mode": state.get("generation_mode", "deterministic"),
+                "clarification_needed": True,
+                "clarification_prompt": clarification_prompt,
+                "missing_inputs": state.get("missing_inputs", []),
+                "measured_observations": {},
+                "derived_estimates": {},
+                "composite_safety_risk": {
+                    "risk_category": "UNKNOWN / INSUFFICIENT EVIDENCE",
+                    "status_headline": "PARAMETERS INCOMPLETE",
+                    "preservation_guarantee": "Never invent telemetry when inputs are missing.",
+                },
+                "evidence_sources": [],
+                "timestamps": timestamps,
+                "warnings": warnings,
+                "missing_evidence": list(state.get("missing_inputs", [])),
+                "errors": errors,
+                "recommendations": ["Specify geographical coordinates (latitude and longitude) to proceed."],
+                "legal_disclaimer": LEGAL_DISCLAIMER,
+                "step_progress": progress,
+            }
+
         if error_count == planned_count and planned_count > 0:
             mission_status = "error"
         elif error_count > 0:
@@ -620,24 +757,35 @@ class OrchestratorAgent:
         else:
             mission_status = "success"
 
-        loc_label = state.get("location_name") or f"Coordinates ({state['latitude']:.2f}, {state['longitude']:.2f})"
-        summary = (
-            f"ORCA Mission Synthesis for {loc_label} [{state.get('user_objective', 'general_maritime').upper()}]: "
-            f"Safety Risk is {composite_risk_cat} ({safety_status}). "
-            f"Wave Height: {wave_height:.2f} m" if wave_height is not None else f"ORCA Mission Synthesis for {loc_label}: Safety Risk is {composite_risk_cat}."
+        # Generate evidence-grounded descriptive synthesis
+        descriptive_synthesis, synth_mode = await synthesize_mission_advisory(
+            location_name=loc_name,
+            latitude=lat,
+            longitude=lon,
+            user_objective=state.get("user_objective", "general_maritime"),
+            vessel_type=state.get("vessel_type", "small_craft"),
+            measured_observations=measured_observations,
+            derived_estimates=derived_estimates,
+            composite_safety_risk=composite_safety_risk,
+            warnings=warnings,
+            missing_evidence=missing_evidence,
+            errors=errors,
+            recommendations=recommendations,
+            clarification_needed=False,
         )
-        if wind_speed_knots is not None:
-            summary += f", Wind Speed: {wind_speed_knots:.1f} kts."
-        if error_count > 0:
-            summary += f" [Note: {error_count} specialist agent(s) reported partial failures]."
 
         progress.append(
-            f"[STEP 3/3] Mission synthesis complete -> status='{mission_status}', composite_risk='{composite_risk_cat}'."
+            f"[STEP 3/3] Mission synthesis complete ({synth_mode}) -> status='{mission_status}', composite_risk='{composite_risk_cat}'."
         )
 
         return {
             "status": mission_status,
-            "summary": summary,
+            "summary": descriptive_synthesis,
+            "descriptive_synthesis": descriptive_synthesis,
+            "generation_mode": synth_mode,
+            "clarification_needed": False,
+            "clarification_prompt": None,
+            "missing_inputs": [],
             "measured_observations": measured_observations,
             "derived_estimates": derived_estimates,
             "composite_safety_risk": composite_safety_risk,
@@ -653,15 +801,21 @@ class OrchestratorAgent:
 
     async def analyze(self, request: OrchestratorAnalyzeRequest) -> OrchestratorAnalyzeResponse:
         """Execute the LangGraph orchestration workflow and return validated response."""
+        query_text = request.query or request.message
         lat = request.origin_latitude if request.origin_latitude is not None else request.latitude
         lon = request.origin_longitude if request.origin_longitude is not None else request.longitude
         loc_name = request.origin_name or request.location_name or "Marine Operational Area"
 
-        if lat is None or lon is None:
-            raise ValueError("Origin latitude and longitude are required.")
-
-        if not -90.0 <= lat <= 90.0 or not -180.0 <= lon <= 180.0:
-            raise ValueError(f"Invalid origin coordinates: lat={lat}, lon={lon}")
+        if not query_text:
+            if lat is None or lon is None:
+                raise ValueError("Origin latitude and longitude are required.")
+            if not -90.0 <= lat <= 90.0 or not -180.0 <= lon <= 180.0:
+                raise ValueError(f"Invalid origin coordinates: lat={lat}, lon={lon}")
+        else:
+            if lat is not None and not -90.0 <= lat <= 90.0:
+                raise ValueError(f"Invalid origin coordinates: lat={lat}")
+            if lon is not None and not -180.0 <= lon <= 180.0:
+                raise ValueError(f"Invalid origin coordinates: lon={lon}")
 
         initial_state: OrchestratorState = {
             "latitude": lat,
@@ -682,6 +836,7 @@ class OrchestratorAgent:
             "wave_height_m": request.wave_height_m,
             "wind_speed_knots": request.wind_speed_knots,
             "precipitation_mm": request.precipitation_mm,
+            "query": query_text,
             "step_progress": [],
             "specialist_responses": {},
             "errors": {},
@@ -690,26 +845,33 @@ class OrchestratorAgent:
 
         final_state = await self.graph.ainvoke(initial_state)
 
+        final_lat = final_state.get("origin_latitude") if final_state.get("origin_latitude") is not None else final_state.get("latitude", lat)
+        final_lon = final_state.get("origin_longitude") if final_state.get("origin_longitude") is not None else final_state.get("longitude", lon)
+        final_loc_name = final_state.get("origin_name") or final_state.get("location_name") or loc_name
+        dest_lat = final_state.get("destination_latitude", request.destination_latitude)
+        dest_lon = final_state.get("destination_longitude", request.destination_longitude)
+        dest_name = final_state.get("destination_name", request.destination_name)
+
         location_dict = {
-            "location_name": loc_name,
-            "latitude": lat,
-            "longitude": lon,
-            "origin_latitude": lat,
-            "origin_longitude": lon,
-            "origin_name": loc_name,
-            "destination_latitude": request.destination_latitude,
-            "destination_longitude": request.destination_longitude,
-            "destination_name": request.destination_name,
+            "location_name": final_loc_name,
+            "latitude": final_lat,
+            "longitude": final_lon,
+            "origin_latitude": final_lat,
+            "origin_longitude": final_lon,
+            "origin_name": final_loc_name,
+            "destination_latitude": dest_lat,
+            "destination_longitude": dest_lon,
+            "destination_name": dest_name,
             "origin": {
-                "name": loc_name,
-                "latitude": lat,
-                "longitude": lon,
-            },
+                "name": final_loc_name,
+                "latitude": final_lat,
+                "longitude": final_lon,
+            } if final_lat is not None and final_lon is not None else None,
             "destination": {
-                "name": request.destination_name or "Destination Port",
-                "latitude": request.destination_latitude,
-                "longitude": request.destination_longitude,
-            } if request.destination_latitude is not None else None,
+                "name": dest_name or "Destination Port",
+                "latitude": dest_lat,
+                "longitude": dest_lon,
+            } if dest_lat is not None and dest_lon is not None else None,
         }
 
         plan_dict = {
@@ -728,6 +890,11 @@ class OrchestratorAgent:
             location=location_dict,
             plan=plan_dict,
             summary=final_state.get("summary", "Mission synthesis completed."),
+            descriptive_synthesis=final_state.get("descriptive_synthesis"),
+            generation_mode=final_state.get("generation_mode", "deterministic"),
+            clarification_needed=final_state.get("clarification_needed", False),
+            clarification_prompt=final_state.get("clarification_prompt"),
+            missing_inputs=final_state.get("missing_inputs", []),
             composite_safety_risk=final_state.get("composite_safety_risk", {}),
             measured_observations=final_state.get("measured_observations", {}),
             derived_estimates=final_state.get("derived_estimates", {}),

@@ -1,0 +1,541 @@
+{
+  "manifest_metadata": {
+    "manifest_version": "v2.3",
+    "manifest_id": "orca-reproducibility-manifest-v2.3",
+    "created_at": "2026-10-12T18:15:00Z",
+    "reference_clock_utc": "2026-10-12T04:00:00Z",
+    "audit_scope": "Live provider readiness and station reproducibility audit for Arabian Sea stations",
+    "audit_findings_summary": {
+      "total_stations_audited": 5,
+      "live_open_meteo_wave_coverage": "5/5 (100.0%)",
+      "live_open_meteo_sst_coverage": "5/5 (100.0%)",
+      "live_noaa_erddap_http_success_rate": "5/5 (100.0%)",
+      "live_noaa_erddap_unmasked_usable_count": "0/5 (0.0% - all grid cells null due to cloud cover)",
+      "live_noaa_erddap_fresh_count": "0/5 (0.0% - observations are 240h old, exceeding 24h limit)",
+      "verified_biological_telemetry_count": "0/5 (0.0% - unintegrated)",
+      "core_finding": "Never infer usable chlorophyll coverage from HTTP 200 or grid-cell count alone. While NOAA ERDDAP returns HTTP 200 with 9-16 grid points per station, all cells contain null values from monsoon cloud masking, and satellite pass is 10 days old. Usable fresh chlorophyll coverage is 0.0%."
+    }
+  },
+  "stations": [
+    {
+      "station_id": "IND-GOA-01",
+      "station_name": "Goa Offshore Waters",
+      "requested_coordinates": {
+        "latitude": 15.0,
+        "longitude": 72.0
+      },
+      "observations": [
+        {
+          "variable": "wave_height",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-wave",
+          "requested_coordinates": {"latitude": 15.0, "longitude": 72.0},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 15.0,
+            "longitude": 72.0,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 0.9,
+          "units": "m",
+          "quality_flags": ["forecast_data", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 3.0,
+            "is_stale": false,
+            "policy": "forecast_data_window"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "sea_surface_temperature",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-sst",
+          "requested_coordinates": {"latitude": 15.0, "longitude": 72.0},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 15.0,
+            "longitude": 72.0,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 30.8,
+          "units": "degC",
+          "quality_flags": ["measured_numerical_sst", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 6.0,
+            "is_stale": false,
+            "policy": "6h_sst_freshness"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "chlorophyll_a",
+          "source": "noaa_coastwatch_erddap",
+          "dataset_id": "noaacwNPPVIIRSSQchlaDaily",
+          "requested_coordinates": {"latitude": 15.0, "longitude": 72.0},
+          "actual_grid_coordinates_or_coverage": {
+            "lat_min": 14.9437,
+            "lat_max": 15.0562,
+            "lon_min": 71.9437,
+            "lon_max": 72.0562,
+            "grid_cells_returned": 16
+          },
+          "observed_at": "2026-10-02T12:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": null,
+          "units": "mg m^-3",
+          "quality_flags": ["cloud_masked", "stale_observation", "raw_cell_null"],
+          "freshness_calculation": {
+            "observed_age_hours": 240.0,
+            "max_age_policy_hours": 24.0,
+            "is_stale": true,
+            "policy": "24h_satellite_ocean_color"
+          },
+          "classification_category": "STALE_OBSERVATION",
+          "operational_baseline_eligible": false
+        },
+        {
+          "variable": "fish_biomass",
+          "source": null,
+          "dataset_id": null,
+          "requested_coordinates": {"latitude": 15.0, "longitude": 72.0},
+          "actual_grid_coordinates_or_coverage": null,
+          "observed_at": null,
+          "retrieved_at": null,
+          "raw_value": null,
+          "units": "kg/km^2",
+          "quality_flags": ["unintegrated_telemetry"],
+          "freshness_calculation": {
+            "observed_age_hours": null,
+            "max_age_policy_hours": 168.0,
+            "is_stale": true,
+            "policy": "missing_telemetry"
+          },
+          "classification_category": "UNAVAILABLE_PROVIDER",
+          "operational_baseline_eligible": false
+        }
+      ]
+    },
+    {
+      "station_id": "IND-BOM-01",
+      "station_name": "Mumbai Outer Shelf",
+      "requested_coordinates": {
+        "latitude": 18.9,
+        "longitude": 72.5
+      },
+      "observations": [
+        {
+          "variable": "wave_height",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-wave",
+          "requested_coordinates": {"latitude": 18.9, "longitude": 72.5},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 18.9,
+            "longitude": 72.5,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 0.82,
+          "units": "m",
+          "quality_flags": ["forecast_data", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 3.0,
+            "is_stale": false,
+            "policy": "forecast_data_window"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "sea_surface_temperature",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-sst",
+          "requested_coordinates": {"latitude": 18.9, "longitude": 72.5},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 18.9,
+            "longitude": 72.5,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 30.0,
+          "units": "degC",
+          "quality_flags": ["measured_numerical_sst", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 6.0,
+            "is_stale": false,
+            "policy": "6h_sst_freshness"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "chlorophyll_a",
+          "source": "noaa_coastwatch_erddap",
+          "dataset_id": "noaacwNPPVIIRSSQchlaDaily",
+          "requested_coordinates": {"latitude": 18.9, "longitude": 72.5},
+          "actual_grid_coordinates_or_coverage": {
+            "lat_min": 18.8437,
+            "lat_max": 18.9562,
+            "lon_min": 72.4437,
+            "lon_max": 72.5562,
+            "grid_cells_returned": 12
+          },
+          "observed_at": "2026-10-02T12:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": null,
+          "units": "mg m^-3",
+          "quality_flags": ["cloud_masked", "stale_observation", "raw_cell_null"],
+          "freshness_calculation": {
+            "observed_age_hours": 240.0,
+            "max_age_policy_hours": 24.0,
+            "is_stale": true,
+            "policy": "24h_satellite_ocean_color"
+          },
+          "classification_category": "STALE_OBSERVATION",
+          "operational_baseline_eligible": false
+        },
+        {
+          "variable": "fish_biomass",
+          "source": null,
+          "dataset_id": null,
+          "requested_coordinates": {"latitude": 18.9, "longitude": 72.5},
+          "actual_grid_coordinates_or_coverage": null,
+          "observed_at": null,
+          "retrieved_at": null,
+          "raw_value": null,
+          "units": "kg/km^2",
+          "quality_flags": ["unintegrated_telemetry"],
+          "freshness_calculation": {
+            "observed_age_hours": null,
+            "max_age_policy_hours": 168.0,
+            "is_stale": true,
+            "policy": "missing_telemetry"
+          },
+          "classification_category": "UNAVAILABLE_PROVIDER",
+          "operational_baseline_eligible": false
+        }
+      ]
+    },
+    {
+      "station_id": "IND-KRW-01",
+      "station_name": "Karwar Coastal Waters",
+      "requested_coordinates": {
+        "latitude": 14.8,
+        "longitude": 73.5
+      },
+      "observations": [
+        {
+          "variable": "wave_height",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-wave",
+          "requested_coordinates": {"latitude": 14.8, "longitude": 73.5},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 14.8,
+            "longitude": 73.5,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 0.68,
+          "units": "m",
+          "quality_flags": ["forecast_data", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 3.0,
+            "is_stale": false,
+            "policy": "forecast_data_window"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "sea_surface_temperature",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-sst",
+          "requested_coordinates": {"latitude": 14.8, "longitude": 73.5},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 14.8,
+            "longitude": 73.5,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 30.8,
+          "units": "degC",
+          "quality_flags": ["measured_numerical_sst", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 6.0,
+            "is_stale": false,
+            "policy": "6h_sst_freshness"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "chlorophyll_a",
+          "source": "noaa_coastwatch_erddap",
+          "dataset_id": "noaacwNPPVIIRSSQchlaDaily",
+          "requested_coordinates": {"latitude": 14.8, "longitude": 73.5},
+          "actual_grid_coordinates_or_coverage": {
+            "lat_min": 14.7437,
+            "lat_max": 14.8562,
+            "lon_min": 73.4437,
+            "lon_max": 73.5562,
+            "grid_cells_returned": 16
+          },
+          "observed_at": "2026-10-02T12:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": null,
+          "units": "mg m^-3",
+          "quality_flags": ["cloud_masked", "stale_observation", "raw_cell_null"],
+          "freshness_calculation": {
+            "observed_age_hours": 240.0,
+            "max_age_policy_hours": 24.0,
+            "is_stale": true,
+            "policy": "24h_satellite_ocean_color"
+          },
+          "classification_category": "STALE_OBSERVATION",
+          "operational_baseline_eligible": false
+        },
+        {
+          "variable": "fish_biomass",
+          "source": null,
+          "dataset_id": null,
+          "requested_coordinates": {"latitude": 14.8, "longitude": 73.5},
+          "actual_grid_coordinates_or_coverage": null,
+          "observed_at": null,
+          "retrieved_at": null,
+          "raw_value": null,
+          "units": "kg/km^2",
+          "quality_flags": ["unintegrated_telemetry"],
+          "freshness_calculation": {
+            "observed_age_hours": null,
+            "max_age_policy_hours": 168.0,
+            "is_stale": true,
+            "policy": "missing_telemetry"
+          },
+          "classification_category": "UNAVAILABLE_PROVIDER",
+          "operational_baseline_eligible": false
+        }
+      ]
+    },
+    {
+      "station_id": "IND-MNG-01",
+      "station_name": "Mangalore Deep Shelf",
+      "requested_coordinates": {
+        "latitude": 12.8,
+        "longitude": 74.0
+      },
+      "observations": [
+        {
+          "variable": "wave_height",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-wave",
+          "requested_coordinates": {"latitude": 12.8, "longitude": 74.0},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 12.8,
+            "longitude": 74.0,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 0.9,
+          "units": "m",
+          "quality_flags": ["forecast_data", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 3.0,
+            "is_stale": false,
+            "policy": "forecast_data_window"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "sea_surface_temperature",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-sst",
+          "requested_coordinates": {"latitude": 12.8, "longitude": 74.0},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 12.8,
+            "longitude": 74.0,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 30.8,
+          "units": "degC",
+          "quality_flags": ["measured_numerical_sst", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 6.0,
+            "is_stale": false,
+            "policy": "6h_sst_freshness"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "chlorophyll_a",
+          "source": "noaa_coastwatch_erddap",
+          "dataset_id": "noaacwNPPVIIRSSQchlaDaily",
+          "requested_coordinates": {"latitude": 12.8, "longitude": 74.0},
+          "actual_grid_coordinates_or_coverage": {
+            "lat_min": 12.7437,
+            "lat_max": 12.8562,
+            "lon_min": 73.9437,
+            "lon_max": 74.0562,
+            "grid_cells_returned": 9
+          },
+          "observed_at": "2026-10-02T12:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": null,
+          "units": "mg m^-3",
+          "quality_flags": ["cloud_masked", "stale_observation", "raw_cell_null"],
+          "freshness_calculation": {
+            "observed_age_hours": 240.0,
+            "max_age_policy_hours": 24.0,
+            "is_stale": true,
+            "policy": "24h_satellite_ocean_color"
+          },
+          "classification_category": "STALE_OBSERVATION",
+          "operational_baseline_eligible": false
+        },
+        {
+          "variable": "fish_biomass",
+          "source": null,
+          "dataset_id": null,
+          "requested_coordinates": {"latitude": 12.8, "longitude": 74.0},
+          "actual_grid_coordinates_or_coverage": null,
+          "observed_at": null,
+          "retrieved_at": null,
+          "raw_value": null,
+          "units": "kg/km^2",
+          "quality_flags": ["unintegrated_telemetry"],
+          "freshness_calculation": {
+            "observed_age_hours": null,
+            "max_age_policy_hours": 168.0,
+            "is_stale": true,
+            "policy": "missing_telemetry"
+          },
+          "classification_category": "UNAVAILABLE_PROVIDER",
+          "operational_baseline_eligible": false
+        }
+      ]
+    },
+    {
+      "station_id": "IND-VRL-01",
+      "station_name": "Veraval Coast (Saurashtra)",
+      "requested_coordinates": {
+        "latitude": 20.8,
+        "longitude": 69.8
+      },
+      "observations": [
+        {
+          "variable": "wave_height",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-wave",
+          "requested_coordinates": {"latitude": 20.8, "longitude": 69.8},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 20.8,
+            "longitude": 69.8,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 0.9,
+          "units": "m",
+          "quality_flags": ["forecast_data", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 3.0,
+            "is_stale": false,
+            "policy": "forecast_data_window"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "sea_surface_temperature",
+          "source": "open-meteo-marine",
+          "dataset_id": "open-meteo-marine-sst",
+          "requested_coordinates": {"latitude": 20.8, "longitude": 69.8},
+          "actual_grid_coordinates_or_coverage": {
+            "latitude": 20.8,
+            "longitude": 69.8,
+            "resolution_deg": 0.05
+          },
+          "observed_at": "2026-10-12T00:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": 29.1,
+          "units": "degC",
+          "quality_flags": ["measured_numerical_sst", "live_validated"],
+          "freshness_calculation": {
+            "observed_age_hours": 4.0,
+            "max_age_policy_hours": 6.0,
+            "is_stale": false,
+            "policy": "6h_sst_freshness"
+          },
+          "classification_category": "LIVE_VALIDATED",
+          "operational_baseline_eligible": true
+        },
+        {
+          "variable": "chlorophyll_a",
+          "source": "noaa_coastwatch_erddap",
+          "dataset_id": "noaacwNPPVIIRSSQchlaDaily",
+          "requested_coordinates": {"latitude": 20.8, "longitude": 69.8},
+          "actual_grid_coordinates_or_coverage": {
+            "lat_min": 20.7437,
+            "lat_max": 20.8562,
+            "lon_min": 69.7437,
+            "lon_max": 69.8562,
+            "grid_cells_returned": 12
+          },
+          "observed_at": "2026-10-02T12:00:00Z",
+          "retrieved_at": "2026-10-12T18:11:00Z",
+          "raw_value": null,
+          "units": "mg m^-3",
+          "quality_flags": ["cloud_masked", "stale_observation", "raw_cell_null"],
+          "freshness_calculation": {
+            "observed_age_hours": 240.0,
+            "max_age_policy_hours": 24.0,
+            "is_stale": true,
+            "policy": "24h_satellite_ocean_color"
+          },
+          "classification_category": "STALE_OBSERVATION",
+          "operational_baseline_eligible": false
+        },
+        {
+          "variable": "fish_biomass",
+          "source": null,
+          "dataset_id": null,
+          "requested_coordinates": {"latitude": 20.8, "longitude": 69.8},
+          "actual_grid_coordinates_or_coverage": null,
+          "observed_at": null,
+          "retrieved_at": null,
+          "raw_value": null,
+          "units": "kg/km^2",
+          "quality_flags": ["unintegrated_telemetry"],
+          "freshness_calculation": {
+            "observed_age_hours": null,
+            "max_age_policy_hours": 168.0,
+            "is_stale": true,
+            "policy": "missing_telemetry"
+          },
+          "classification_category": "UNAVAILABLE_PROVIDER",
+          "operational_baseline_eligible": false
+        }
+      ]
+    }
+  ]
+}

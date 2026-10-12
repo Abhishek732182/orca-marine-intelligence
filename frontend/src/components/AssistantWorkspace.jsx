@@ -413,6 +413,11 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
           recommendations: res.response_message.recommendations || ev.recommendations,
           agent_results: agentResults,
           evidence_summary: ev,
+          clarification_needed: res.clarification_needed || res.response_message.clarification_needed,
+          clarification_prompt: res.clarification_prompt || res.response_message.clarification_prompt,
+          missing_inputs: res.missing_inputs || res.response_message.missing_inputs,
+          descriptive_synthesis: res.descriptive_synthesis || res.response_message.descriptive_synthesis,
+          generation_mode: res.generation_mode || res.response_message.generation_mode,
         };
         setMessages((prev) => [...prev, enrichedMsg]);
       } else if (res.response) {
@@ -431,6 +436,11 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
           metrics: ev.metrics,
           recommendations: ev.recommendations,
           limitations: res.limitations || [],
+          clarification_needed: res.clarification_needed,
+          clarification_prompt: res.clarification_prompt,
+          missing_inputs: res.missing_inputs,
+          descriptive_synthesis: res.descriptive_synthesis,
+          generation_mode: res.generation_mode,
         };
         setMessages((prev) => [...prev, assistantMsg]);
       }
@@ -1020,6 +1030,67 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
                       <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                     ) : (
                       renderMarkdown(msg.content)
+                    )}
+
+                    {/* Clarification Request Banner when inputs are missing */}
+                    {msg.clarification_prompt && (
+                      <div
+                        style={{
+                          marginTop: '14px',
+                          padding: '12px 16px',
+                          background: '#FFFBEB',
+                          borderRadius: '8px',
+                          border: '1px solid #FCD34D',
+                          fontSize: '0.85rem',
+                          color: '#92400E',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <span>⚠️</span> Action Required: Parameter Clarification
+                        </div>
+                        <p style={{ margin: 0, lineHeight: 1.5 }}>{msg.clarification_prompt}</p>
+                        {msg.missing_inputs && msg.missing_inputs.length > 0 && (
+                          <div style={{ marginTop: '6px', fontSize: '0.78rem', color: '#B45309' }}>
+                            <strong>Missing inputs:</strong> {msg.missing_inputs.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* LLM Descriptive Synthesis & Advisory */}
+                    {msg.descriptive_synthesis && (
+                      <div
+                        style={{
+                          marginTop: '14px',
+                          padding: '12px 16px',
+                          background: '#F0FDF4',
+                          borderRadius: '8px',
+                          border: '1px solid #BBF7D0',
+                          fontSize: '0.85rem',
+                          color: '#166534',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>✦</span> Intelligence Synthesis
+                          </strong>
+                          {msg.generation_mode && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: msg.generation_mode.startsWith('llm') ? '#DCFCE7' : '#FEF3C7',
+                                color: msg.generation_mode.startsWith('llm') ? '#15803D' : '#92400E',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {msg.generation_mode.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: 0, lineHeight: 1.55, whiteSpace: 'pre-line' }}>{msg.descriptive_synthesis}</p>
+                      </div>
                     )}
 
                     {/* Operational Summary Banner if available */}

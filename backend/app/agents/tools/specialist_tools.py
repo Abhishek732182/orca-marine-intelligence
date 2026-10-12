@@ -21,10 +21,12 @@ from app.schemas.agent_schemas import (
     WeatherAnalyzeRequest,
 )
 
+from app.data_sources.ingestion_worker import get_fisheries_worker
+
 # Shared specialist agent instances for workspace assistant
 _weather_agent = WeatherAgent()
 _ocean_agent = OceanAgent()
-_fishing_agent = FishingZoneAgent()
+_fishing_agent = FishingZoneAgent(fisheries_provider=get_fisheries_worker())
 _route_agent = RouteAgent()
 _safety_agent = SafetyRiskAgent()
 

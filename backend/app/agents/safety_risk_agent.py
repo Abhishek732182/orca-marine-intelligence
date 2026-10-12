@@ -55,19 +55,24 @@ class SafetyRiskAgent:
                     longitude=lon,
                 )
                 if marine_records:
-                    first_rec = marine_records[0]
-                    now_utc = datetime.now(timezone.utc)
-                    if first_rec.status == "stale":
-                        is_stale = True
-                        warnings.append("Marine observation record is marked 'stale'.")
-                    if first_rec.retrieved_at and (now_utc - first_rec.retrieved_at).total_seconds() > 86400:
-                        is_stale = True
-                        warnings.append("Marine observation retrieval timestamp is stale (> 24 hours old).")
+                    wave_records = [
+                        r for r in marine_records
+                        if (r.variable or "").lower() in ("wave_height", "wave_height_m", "hs")
+                    ]
+                    if wave_records:
+                        first_rec = wave_records[0]
+                        now_utc = datetime.now(timezone.utc)
+                        if first_rec.status == "stale":
+                            is_stale = True
+                            warnings.append("Marine observation record is marked 'stale'.")
+                        if first_rec.retrieved_at and (now_utc - first_rec.retrieved_at).total_seconds() > 86400:
+                            is_stale = True
+                            warnings.append("Marine observation retrieval timestamp is stale (> 24 hours old).")
 
-                    heights = [float(r.value) for r in marine_records if r.value is not None]
-                    if heights:
-                        wave_h = heights[0]
-                        data_sources_used.append("Open-Meteo Marine (live)")
+                        heights = [float(r.value) for r in wave_records if r.value is not None]
+                        if heights:
+                            wave_h = heights[0]
+                            data_sources_used.append("Open-Meteo Marine (live)")
             except Exception as exc:
                 provider_errors.append(f"Marine provider failure: {str(exc)}")
 

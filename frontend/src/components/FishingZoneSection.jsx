@@ -143,11 +143,11 @@ export default function FishingZoneSection() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px', marginBottom: '18px' }}>
             <div className="metric-card">
               <span className="metric-label">Vessel Operability</span>
               <div className="metric-value" style={{
-                fontSize: '1.2rem',
+                fontSize: '1.15rem',
                 color: response.analysis?.operational_feasibility === 'FAVORABLE' ? 'var(--emerald)' : 'var(--amber)'
               }}>
                 {response.analysis?.operational_feasibility || 'UNKNOWN'}
@@ -161,15 +161,27 @@ export default function FishingZoneSection() {
               </div>
             </div>
             <div className="metric-card">
-              <span className="metric-label">Sea State</span>
-              <div className="metric-value" style={{ fontSize: '1.15rem' }}>
-                {response.observations?.sea_state_category || 'N/A'}
+              <span className="metric-label">Observed SST</span>
+              <div className="metric-value">
+                {response.observations?.sea_surface_temperature_c ?? response.analysis?.environmental_habitat_indicators?.sea_surface_temperature_c ?? '--'}
+                <span className="metric-unit">°C</span>
+              </div>
+            </div>
+            <div className="metric-card">
+              <span className="metric-label">Thermal Habitat</span>
+              <div className="metric-value" style={{
+                fontSize: '1.05rem',
+                color: response.analysis?.environmental_habitat_indicators?.thermal_suitability === 'OPTIMAL' ? 'var(--emerald)' :
+                       response.analysis?.environmental_habitat_indicators?.thermal_suitability === 'TOLERABLE' ? 'var(--amber)' :
+                       response.analysis?.environmental_habitat_indicators?.thermal_suitability?.includes('UNFAVORABLE') ? 'var(--coral)' : 'var(--text-main)'
+              }}>
+                {response.analysis?.environmental_habitat_indicators?.thermal_suitability || 'N/A'}
               </div>
             </div>
             <div className="metric-card">
               <span className="metric-label">Fisheries Telemetry</span>
               <div className="metric-value" style={{
-                fontSize: '1.15rem',
+                fontSize: '1.05rem',
                 color: response.analysis?.verified_fish_distribution?.status === 'VERIFIED' ? 'var(--emerald)' : 'var(--amber)'
               }}>
                 {response.analysis?.verified_fish_distribution?.status || 'UNVERIFIED'}
@@ -188,18 +200,117 @@ export default function FishingZoneSection() {
             </div>
           </div>
 
+          {/* Divergence / Conflict Warnings */}
+          {response.warnings && response.warnings.some(w => w.includes('CONFLICT / DIVERGENCE')) && (
+            <div className="notice-box notice-warning" style={{ borderLeft: '4px solid var(--amber)', marginBottom: '14px' }}>
+              <div>
+                <strong>Operational vs Habitat Divergence:</strong>
+                <ul style={{ paddingLeft: '18px', marginTop: '4px' }}>
+                  {response.warnings.filter(w => w.includes('CONFLICT / DIVERGENCE')).map((w, idx) => (
+                    <li key={idx} style={{ fontWeight: 500 }}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {response.analysis?.zone_summary && (
-            <div className="notice-box notice-info">
+            <div className="notice-box notice-info" style={{ marginBottom: '14px' }}>
               {response.analysis.zone_summary}
             </div>
           )}
 
+          {/* Environmental Habitat & Thermal Evaluation */}
+          {response.analysis?.environmental_habitat_indicators && (
+            <div style={{ marginTop: '16px', background: 'var(--bg-surface)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h4 style={{ fontSize: '0.86rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                  Environmental Habitat Indicators ({response.analysis?.target_species_queried || 'General'})
+                </h4>
+                {response.analysis?.environmental_habitat_indicators?.thermal_suitability && (
+                  <span className={`badge ${
+                    response.analysis.environmental_habitat_indicators.thermal_suitability === 'OPTIMAL' ? 'badge-success' :
+                    response.analysis.environmental_habitat_indicators.thermal_suitability === 'TOLERABLE' ? 'badge-warning' : 'badge-danger'
+                  }`}>
+                    {response.analysis.environmental_habitat_indicators.thermal_suitability}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                {response.analysis.environmental_habitat_indicators.thermal_evaluation_rationale || 'Thermal evaluation pending.'}
+              </p>
+              {response.analysis.environmental_habitat_indicators.optimal_range_c && (
+                <div style={{ display: 'flex', gap: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <span>Optimal SST: <strong>{response.analysis.environmental_habitat_indicators.optimal_range_c[0]} - {response.analysis.environmental_habitat_indicators.optimal_range_c[1]} °C</strong></span>
+                  {response.analysis.environmental_habitat_indicators.tolerable_range_c && (
+                    <span>Tolerable SST: <strong>{response.analysis.environmental_habitat_indicators.tolerable_range_c[0]} - {response.analysis.environmental_habitat_indicators.tolerable_range_c[1]} °C</strong></span>
+                  )}
+                  {response.observations?.chlorophyll_a_mg_m3 !== null && response.observations?.chlorophyll_a_mg_m3 !== undefined && (
+                    <span>Chlorophyll-a: <strong>{response.observations.chlorophyll_a_mg_m3} mg/m³</strong></span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Evidence Provenance & Freshness Table */}
+          {response.observations?.evidence_provenance && Object.values(response.observations.evidence_provenance).some(Boolean) && (
+            <div style={{ marginTop: '16px', background: '#FFFFFF', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+              <h4 style={{ fontSize: '0.86rem', color: 'var(--text-main)', marginBottom: '10px', fontWeight: 600 }}>
+                Evidence Provenance & Freshness Status:
+              </h4>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '6px 8px' }}>Variable</th>
+                      <th style={{ padding: '6px 8px' }}>Source / Sensor</th>
+                      <th style={{ padding: '6px 8px' }}>Observed At</th>
+                      <th style={{ padding: '6px 8px' }}>Coordinates (Grid vs Requested)</th>
+                      <th style={{ padding: '6px 8px' }}>Freshness Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(response.observations.evidence_provenance).map(([key, prov]) => {
+                      if (!prov) return null;
+                      const freshBadgeClass = prov.freshness_status === 'valid' ? 'badge-success' :
+                                              prov.freshness_status === 'stale' ? 'badge-warning' : 'badge-danger';
+                      return (
+                        <tr key={key} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '8px', fontWeight: 600, textTransform: 'capitalize' }}>
+                            {key.replace(/_/g, ' ')}
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <div>{prov.source}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{prov.sensor_description}</div>
+                          </td>
+                          <td style={{ padding: '8px', fontFamily: 'var(--font-mono)' }}>
+                            {prov.observed_at ? new Date(prov.observed_at).toISOString().replace('T', ' ').substring(0, 19) + ' UTC' : 'N/A'}
+                          </td>
+                          <td style={{ padding: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.72rem' }}>
+                            <div>Grid: {prov.latitude?.toFixed(2)}°N, {prov.longitude?.toFixed(2)}°E</div>
+                            <div style={{ color: 'var(--text-muted)' }}>Req: {prov.requested_latitude?.toFixed(2)}°N, {prov.requested_longitude?.toFixed(2)}°E</div>
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <span className={`badge ${freshBadgeClass}`}>
+                              {prov.freshness_status || 'UNKNOWN'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {response.analysis?.criteria_applied && (
-            <div style={{ marginTop: '16px', background: 'rgba(5, 12, 26, 0.7)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+            <div style={{ marginTop: '16px', background: 'var(--bg-surface)', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
               <h4 style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
                 Evidence & Criteria Applied:
               </h4>
-              <ul style={{ paddingLeft: '18px', fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.6' }}>
+              <ul style={{ paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
                 {response.analysis.criteria_applied.map((crit, idx) => (
                   <li key={idx}>{crit}</li>
                 ))}

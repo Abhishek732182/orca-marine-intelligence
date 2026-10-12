@@ -31,7 +31,7 @@ class OpenMeteoMarineProvider:
         params = {
             "latitude": latitude,
             "longitude": longitude,
-            "hourly": "wave_height",
+            "hourly": "wave_height,sea_surface_temperature",
             "forecast_days": 1,
             "timezone": "GMT",
             "length_unit": "metric",
@@ -48,6 +48,7 @@ class OpenMeteoMarineProvider:
             raise ValueError("Unexpected Open-Meteo hourly response")
         times = hourly.get("time", [])
         heights = hourly.get("wave_height", [])
+        ssts = hourly.get("sea_surface_temperature")
 
         if not isinstance(times, list) or not isinstance(heights, list):
             raise ValueError("Unexpected Open-Meteo hourly response")
@@ -55,9 +56,13 @@ class OpenMeteoMarineProvider:
         if len(times) != len(heights):
             raise ValueError("Wave-height timestamps and values do not match")
 
+        if isinstance(ssts, list) and len(times) != len(ssts):
+            raise ValueError("Sea-surface-temperature timestamps and values do not match")
+
         retrieved_at = datetime.now(timezone.utc)
         records: list[EvidenceRecord] = []
 
+        # 1. Parse wave_height records
         for timestamp, height in zip(times, heights):
             if observed_at is not None and timestamp != observed_at:
                 continue
@@ -96,9 +101,59 @@ class OpenMeteoMarineProvider:
                         "provider_timezone": payload.get("timezone"),
                         "model_grid_latitude": payload.get("latitude"),
                         "model_grid_longitude": payload.get("longitude"),
+                        "sensor_dataset": "open_meteo_marine_wave_grid",
                     },
                 )
             )
+
+        # 2. Parse sea_surface_temperature records if present
+        if isinstance(ssts, list):
+            sst_unit = payload.get("hourly_units", {}).get("sea_surface_temperature", "°C")
+            for timestamp, sst_val in zip(times, ssts):
+                if observed_at is not None and timestamp != observed_at:
+                    continue
+
+                if sst_val is None:
+                    continue
+
+                try:
+                    sst_float = float(sst_val)
+                except (ValueError, TypeError):
+                    continue
+
+                observation_time = datetime.fromisoformat(
+                    timestamp.replace("Z", "+00:00")
+                )
+
+                if observation_time.tzinfo is None:
+                    observation_time = observation_time.replace(
+                        tzinfo=timezone.utc
+                    )
+
+                records.append(
+                    EvidenceRecord(
+                        evidence_id=f"orca-sst-{uuid4().hex}",
+                        source=self.provider_name,
+                        source_record_id=f"sst:{timestamp}:{latitude}:{longitude}",
+                        variable="sea_surface_temperature",
+                        value=sst_float,
+                        unit=sst_unit,
+                        latitude=float(payload.get("latitude", latitude)),
+                        longitude=float(payload.get("longitude", longitude)),
+                        observed_at=observation_time,
+                        retrieved_at=retrieved_at,
+                        status="valid",
+                        quality_flags=["forecast_data", "open_meteo_marine_sst"],
+                        metadata={
+                            "requested_latitude": latitude,
+                            "requested_longitude": longitude,
+                            "provider_timezone": payload.get("timezone"),
+                            "model_grid_latitude": payload.get("latitude"),
+                            "model_grid_longitude": payload.get("longitude"),
+                            "sensor_dataset": "open_meteo_marine_sst_grid",
+                        },
+                    )
+                )
 
         if observed_at is not None and not records:
             raise ValueError(

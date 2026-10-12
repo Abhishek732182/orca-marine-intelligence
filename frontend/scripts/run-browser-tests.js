@@ -3,9 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const artifactsDir = 'C:\\Users\\ABHINANDAN KUMAR\\.gemini\\antigravity-ide\\brain\\86ffe36f-9766-40a3-a6a5-a401ad8f5b10';
+const artifactsDir = process.env.ARTIFACTS_DIR || 'C:\\Users\\ABHINANDAN KUMAR\\.gemini\\antigravity-ide\\brain\\39587619-e750-48dd-a46b-e380e1e5f253';
 const profileDir = path.join(artifactsDir, 'scratch', 'chrome_test_profile');
 
+fs.mkdirSync(artifactsDir, { recursive: true });
 fs.mkdirSync(profileDir, { recursive: true });
 
 console.log('=================================================================');
@@ -386,6 +387,27 @@ async function run() {
     });
     console.log('  -> Agent 6 Live Synthesis:', assistantPassed ? 'PASS' : 'FAIL');
     await client.screenshot('browser_02_assistant_live_response.png');
+
+    // =========================================================================
+    // 5b. Natural-Language Route Planning & Synthesis in Browser
+    // =========================================================================
+    console.log('\n--- 5b. Natural-Language Route Planning & Advisory Synthesis ---');
+    await client.setInput("input[placeholder*='Submit maritime task']", 'Plan geodesic route from Goa (15.0, 72.0) to Mumbai (18.9, 72.8)');
+    await new Promise(r => setTimeout(r, 200));
+    await client.clickButtonByText('Send');
+    console.log('  Submitted passage planning query, waiting for updated plan & geodesic distance...');
+    const routePlanText = await client.waitForText('.assistant-workspace-container', 'geodesic', 22000);
+    const routePlanLower = routePlanText.toLowerCase();
+    const routePlanPassed = routePlanLower.includes('geodesic') &&
+      (routePlanLower.includes('mumbai') || routePlanLower.includes('route agent') || routePlanLower.includes('distance'));
+    testResults.push({
+      category: 'Agent 6 Synthesis',
+      check: '5b. Auto Orchestrator: Natural-language passage planning generates geodesic route & grounding',
+      passed: routePlanPassed,
+      detail: `Route synthesis verified: ${routePlanPassed}`,
+    });
+    console.log('  -> 5b Route Planning Synthesis:', routePlanPassed ? 'PASS' : 'FAIL');
+    await client.screenshot('browser_02b_route_planning_synthesis.png');
 
     // =========================================================================
     // 6. Interactive Map View & Layer Toggles

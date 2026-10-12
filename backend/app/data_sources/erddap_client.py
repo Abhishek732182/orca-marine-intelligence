@@ -40,7 +40,7 @@ class ErddapSnapshot(BaseModel):
     max_lat: float
     min_lon: float
     max_lon: float
-    observed_at: datetime
+    observed_at: datetime | None = None
     retrieved_at: datetime
     source_url: str
     records: list[dict[str, Any]]
@@ -52,11 +52,11 @@ class ErddapClient:
 
     def __init__(
         self,
-        base_url: str = "https://coastwatch.pfeg.noaa.gov/erddap",
+        base_url: str = "https://coastwatch.noaa.gov/erddap",
         cache_dir: str | Path = "data/fisheries_cache",
         mode: ErddapMode = "live_with_fallback",
-        timeout_seconds: float = 10.0,
-        max_retries: int = 2,
+        timeout_seconds: float = 2.0,
+        max_retries: int = 1,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.cache_dir = Path(cache_dir)
@@ -148,21 +148,33 @@ class ErddapClient:
                 continue
             diagnostics["region_matches"] += 1
 
-            age_sec = (now_utc - snap.retrieved_at).total_seconds()
-            if max_age_seconds is not None and age_sec > max_age_seconds:
+            # Calculate snapshot age using snapshot.observed_at, never retrieved_at
+            if snap.observed_at is None:
+                diagnostics["expired_snapshots"] += 1
+                obs_age_sec = float("inf")
+            else:
+                snap_obs = (
+                    snap.observed_at
+                    if snap.observed_at.tzinfo is not None
+                    else snap.observed_at.replace(tzinfo=timezone.utc)
+                )
+                obs_age_sec = (now_utc - snap_obs).total_seconds()
+
+            if max_age_seconds is not None and obs_age_sec > max_age_seconds:
                 diagnostics["expired_snapshots"] += 1
                 continue
 
-            matching.append((snap, age_sec))
+            matching.append((snap, obs_age_sec))
 
         if not matching:
             return None, diagnostics
 
-        # Pick freshest snapshot
+        # Pick freshest snapshot based on observation age
         matching.sort(key=lambda item: item[1])
-        best_snap, best_age = matching[0]
+        best_snap, best_obs_age = matching[0]
         diagnostics["selected_snapshot_id"] = best_snap.snapshot_id
-        diagnostics["snapshot_age_seconds"] = best_age
+        diagnostics["snapshot_age_seconds"] = (now_utc - best_snap.retrieved_at).total_seconds()
+        diagnostics["observation_age_seconds"] = best_obs_age
         return best_snap, diagnostics
 
     def parse_erddap_json_table(
@@ -280,8 +292,9 @@ class ErddapClient:
             return self._serve_snapshot_records(product_id, latitude, longitude, now_utc)
 
         # 2. Live Request Attempt
+        dataset_id = "noaacwNPPVIIRSSQchlaDaily" if "coastwatch.noaa.gov" in self.base_url else "nesdisVHNSQchlaDaily"
         url = (
-            f"{self.base_url}/griddap/nesdisVHNSQchlaDaily.json"
+            f"{self.base_url}/griddap/{dataset_id}.json"
             f"?chlor_a[(last)][(0.0)][({latitude - 0.05:.4f}):({latitude + 0.05:.4f})]"
             f"[({longitude - 0.05:.4f}):({longitude + 0.05:.4f})]"
         )
@@ -293,7 +306,7 @@ class ErddapClient:
                     resp = await client.get(url, timeout=self.timeout_seconds, follow_redirects=True)
                 else:
                     async with httpx.AsyncClient(timeout=self.timeout_seconds, follow_redirects=True) as session:
-                        resp = await session.get(url)
+                        resp = await session.get(url, follow_redirects=True)
 
                 if resp.status_code >= 500:
                     raise httpx.HTTPStatusError(
@@ -367,7 +380,20 @@ class ErddapClient:
             logger.info("No matching offline snapshot for %s at (%s, %s): %s", product_id, latitude, longitude, diagnostics)
             return []
 
-        age_seconds = diagnostics.get("snapshot_age_seconds", 0.0)
+        # Staleness depends strictly on the physical observation time, NEVER retrieval time
+        if snapshot.observed_at is None:
+            obs_age_seconds = float("inf")
+            is_stale = True
+        else:
+            snap_obs = (
+                snapshot.observed_at
+                if snapshot.observed_at.tzinfo is not None
+                else snapshot.observed_at.replace(tzinfo=timezone.utc)
+            )
+            obs_age_seconds = (now_utc - snap_obs).total_seconds()
+            is_stale = obs_age_seconds > 86400 or obs_age_seconds < 0
+
+        retrieval_age_seconds = (now_utc - snapshot.retrieved_at).total_seconds()
         stamped_records: list[EvidenceRecord] = []
 
         for rec_dict in snapshot.records:
@@ -378,9 +404,10 @@ class ErddapClient:
                 rec_meta["is_cached_snapshot"] = True
                 rec_meta["offline_fixture_mode"] = True
                 rec_meta["snapshot_id"] = snapshot.snapshot_id
-                rec_meta["snapshot_age_seconds"] = age_seconds
+                rec_meta["snapshot_age_seconds"] = retrieval_age_seconds
+                rec_meta["observation_age_seconds"] = obs_age_seconds
                 rec_meta["snapshot_retrieved_at"] = snapshot.retrieved_at.isoformat()
-                rec_meta["original_observed_at"] = snapshot.observed_at.isoformat()
+                rec_meta["original_observed_at"] = snapshot.observed_at.isoformat() if snapshot.observed_at else None
 
                 flags = list(rec.quality_flags or [])
                 if "cached_offline_snapshot" not in flags:
@@ -388,8 +415,9 @@ class ErddapClient:
                 if "offline_fixture" not in flags:
                     flags.append("offline_fixture")
 
-                # If snapshot is older than 24 hours, update status to stale
-                status = "stale" if age_seconds > 86400 else rec.status
+                # Physical freshness depends strictly on observation timestamp, not when it was retrieved.
+                # If observation timestamp is absent or invalid (>24h), do not classify as fresh.
+                status = "stale" if is_stale else rec.status
 
                 stamped = EvidenceRecord(
                     evidence_id=f"snap-{rec.evidence_id}",
