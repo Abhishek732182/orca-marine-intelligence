@@ -198,6 +198,88 @@ describe('Live Backend Integration Tests (http://127.0.0.1:8001)', () => {
     assert.ok(toolNames.includes('read_project_file'));
     assert.ok(toolNames.includes('apply_file_edit'));
   });
+
+  it('14. Orchestrator Agent - executes all five specialists concurrently when objective is "all"', async () => {
+    const res = await analyzeOrchestrator({
+      origin_latitude: 15.0,
+      origin_longitude: 72.0,
+      origin_name: 'Goa Offshore',
+      destination_latitude: 18.9,
+      destination_longitude: 72.8,
+      destination_name: 'Mumbai Port',
+      user_objective: 'all',
+      vessel_type: 'small_craft',
+    });
+    assert.equal(res.agent, 'ORCA Orchestrator Agent');
+    assert.equal(res.user_objective, 'all');
+    assert.equal(res.plan.planned_agents.length, 5);
+    assert.ok(res.individual_agent_results.weather);
+    assert.ok(res.individual_agent_results.ocean);
+    assert.ok(res.individual_agent_results.fishing_zone);
+    assert.ok(res.individual_agent_results.route);
+    assert.ok(res.individual_agent_results.safety_risk);
+  });
+
+  it('15. Orchestrator Agent - terrestrial inland coordinates preserve INSUFFICIENT_EVIDENCE without data invention', async () => {
+    const res = await analyzeOrchestrator({
+      latitude: 21.15,
+      longitude: 79.09,
+      location_name: 'Inland Nagpur',
+      user_objective: 'safety_check',
+    });
+    assert.equal(res.agent, 'ORCA Orchestrator Agent');
+    assert.equal(res.status, 'insufficient_evidence');
+    assert.equal(res.measured_observations.wave_height_m, null);
+    assert.equal(res.composite_safety_risk.risk_category, 'UNKNOWN / INSUFFICIENT EVIDENCE');
+    assert.ok(!res.recommendations.some(r => r.includes('Favorable')));
+  });
+
+  it('16. Orchestrator Agent - detects conflicting specialist results and raises observation discrepancy warning', async () => {
+    // Provide a wave height of 3.8m (Rough) with manual input
+    const res = await analyzeOrchestrator({
+      latitude: 15.0,
+      longitude: 72.0,
+      wave_height_m: 3.8,
+      wind_speed_knots: 12.0,
+      user_objective: 'safety_check',
+    });
+    assert.equal(res.agent, 'ORCA Orchestrator Agent');
+    // 3.8m wave is Rough sea state; if ocean agent reported different sea state, warning is flagged
+    assert.equal(res.measured_observations.wave_height_m, 3.8);
+    assert.ok(res.composite_safety_risk.risk_category === 'CRITICAL' || res.composite_safety_risk.risk_category === 'HIGH');
+  });
+
+  it('17. Orchestrator Agent - verifies consistent response fields between API and frontend', async () => {
+    const res = await analyzeOrchestrator({
+      latitude: 15.0,
+      longitude: 72.0,
+      user_objective: 'general_maritime',
+    });
+    const expectedKeys = [
+      'agent',
+      'status',
+      'user_objective',
+      'location',
+      'plan',
+      'summary',
+      'composite_safety_risk',
+      'measured_observations',
+      'derived_estimates',
+      'individual_agent_results',
+      'evidence_sources',
+      'timestamps',
+      'warnings',
+      'missing_evidence',
+      'errors',
+      'recommendations',
+      'legal_disclaimer',
+      'generated_at',
+    ];
+    for (const key of expectedKeys) {
+      assert.ok(key in res, `Expected response to contain field '${key}'`);
+    }
+  });
 });
+
 
 

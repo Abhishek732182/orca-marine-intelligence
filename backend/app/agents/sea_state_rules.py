@@ -9,9 +9,18 @@ These rules map significant wave height (Hs) in meters directly to international
 meteorological sea-state categories without arbitrary or unreviewed thresholds.
 """
 
-from typing import Any
+from typing import Any, TypedDict
 
-WMO_SEA_STATE_TABLE = [
+
+class SeaStateRule(TypedDict):
+    code: int
+    category: str
+    min_m: float
+    max_m: float
+    description: str
+
+
+WMO_SEA_STATE_TABLE: list[SeaStateRule] = [
     {
         "code": 0,
         "category": "Calm (glassy)",
@@ -115,17 +124,19 @@ def classify_sea_state(wave_height_m: float | None) -> dict[str, Any]:
         }
 
     for entry in WMO_SEA_STATE_TABLE[1:]:
-        SEA_STATE_RULES: list[dict[str, str | float | int]] = [
-    {
-        "max_m": 0.1,
-        "code": 0,
-        "category": "Calm",
-        "description": "Calm",
-    },
-]
+        min_m: float = entry["min_m"]
+        max_m: float = entry["max_m"]
+        if min_m < wave_height_m <= max_m:
+            return {
+                "wmo_code": entry["code"],
+                "category": entry["category"],
+                "description": entry["description"],
+                "rule_standard": "WMO Code Table 3700 / Douglas Sea Scale",
+            }
+
     return {
         "wmo_code": 9,
         "category": "Phenomenal",
-        "description": "Exceptionally high waves.",
+        "description": "Exceptionally high waves; sea completely covered with white foam patches.",
         "rule_standard": "WMO Code Table 3700 / Douglas Sea Scale",
     }

@@ -71,8 +71,13 @@ STANDARD_LIMITATIONS = [
 class FishingZoneAgent:
     """Independent Fishing Zone Specialist Agent."""
 
-    def __init__(self, provider: OpenMeteoMarineProvider | None = None) -> None:
+    def __init__(
+        self,
+        provider: OpenMeteoMarineProvider | None = None,
+        fisheries_provider: Any | None = None,
+    ) -> None:
         self.provider = provider or OpenMeteoMarineProvider()
+        self.fisheries_provider = fisheries_provider
 
     async def analyze(self, request: FishingZoneAnalyzeRequest) -> FishingZoneAnalyzeResponse:
         """Analyze marine conditions, vessel feasibility, and fisheries suitability."""
@@ -156,13 +161,24 @@ class FishingZoneAgent:
         species_name_queried = target_species_raw or "General Pelagic/Demersal"
 
         # ----------------------------------------------------------------------
-        # 2. Fetch Evidence from Connected Marine Provider
+        # 2. Fetch Evidence from Connected Marine Provider & Fisheries Sources
         # ----------------------------------------------------------------------
         try:
             raw_records = await self.provider.fetch(
                 latitude=lat,
                 longitude=lon,
             )
+            # Query resilient fisheries/satellite provider if injected
+            if self.fisheries_provider is not None:
+                try:
+                    fish_records = await self.fisheries_provider.fetch(
+                        latitude=lat,
+                        longitude=lon,
+                    )
+                    if fish_records:
+                        raw_records = list(raw_records or []) + list(fish_records)
+                except Exception as fish_exc:
+                    logger.debug("Fisheries provider query skipped or failed: %s", fish_exc)
         except httpx.HTTPError as exc:
             return FishingZoneAnalyzeResponse(
                 status="error",
@@ -754,9 +770,12 @@ class FishingZoneAgent:
             f"Physical sea state: WMO Code {sea_state['wmo_code']} ({sea_state['category']}).",
             f"Wave conditions: Max wave height {max_wave_m:.2f} m, average {avg_wave_m:.2f} m across {len(valid_heights)} accepted observation(s) spanning {hours_evaluated:.1f} hours.",
             f"Wave physical evaluation: {suitability_text}",
-            "Satellite chlorophyll-a and direct fish biomass telemetry: UNAVAILABLE on current provider.",
             "Vessel safety rule: Wave height alone does NOT constitute maritime safety clearance or fishing authorization.",
         ]
+        if observed_chla is not None:
+            criteria_applied.append(f"Satellite ocean color chlorophyll-a observed: {observed_chla:.2f} mg/m^3.")
+        else:
+            criteria_applied.append("Satellite chlorophyll-a and direct fish biomass telemetry: UNAVAILABLE on current provider.")
 
         if species_status == "SUPPORTED":
             species_info = species_lookup["species_info"]
@@ -775,6 +794,11 @@ class FishingZoneAgent:
             "Wave height alone does NOT determine vessel or navigation safety.",
             "Operational feasibility represents strictly physical wave measurements, NOT guaranteed catches or vessel safety clearance.",
         ]
+
+        if any("cached_offline_snapshot" in (r.quality_flags or []) for r in raw_records):
+            warnings.append(
+                "Offline cached fisheries/satellite snapshot in use; direct live upstream telemetry unavailable."
+            )
 
         if max_wave_m >= 2.5:
             warnings.append(f"Severe wave hazard: Waves reach {max_wave_m:.2f} m.")
@@ -877,11 +901,20 @@ class FishingZoneAgent:
             ),
         }
 
+        is_offline = any(
+            "cached_offline_snapshot" in (r.quality_flags or [])
+            or "offline_fixture" in (r.quality_flags or [])
+            for r in raw_records
+        )
+        active_mode = "offline_cached" if is_offline else "live"
+
         # Preserved data source information
         data_source_payload: dict[str, Any] = {
             "provider": getattr(self.provider, "provider_name", "open-meteo-marine"),
             "coverage": "Numerical ocean wave model (ECMWF / Meteo-France)",
             "data_limitations": "Lacks direct satellite chlorophyll-a or fish telemetry",
+            "active_data_mode": active_mode,
+            "is_offline_fixture": is_offline,
             "connected_providers": CONNECTED_PROVIDERS,
             "contributing_sources": sorted(list(contributing_sources)),
             "missing_providers": MISSING_FISHERIES_PROVIDERS,

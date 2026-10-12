@@ -1,0 +1,13 @@
+{
+  "table": {
+    "columnNames": ["time", "altitude", "latitude", "longitude", "chlor_a"],
+    "columnUnits": ["UTC", "m", "degrees_north", "degrees_east", "mg m-3"],
+    "columnTypes": ["String", "float", "float", "float", "float"],
+    "rows": [
+      ["2026-10-12T00:00:00Z", 0.0, 15.0, 72.0, 0.65],
+      ["2026-10-12T00:00:00Z", 0.0, 15.05, 72.0, 0.68],
+      ["2026-10-12T00:00:00Z", 0.0, 15.0, 72.05, 0.62],
+      ["2026-10-12T00:00:00Z", 0.0, 15.05, 72.05, 0.71]
+    ]
+  }
+}

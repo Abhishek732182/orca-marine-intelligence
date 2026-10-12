@@ -125,12 +125,21 @@ export default function FishingZoneSection() {
               <span className={`badge badge-${response.status}`}>
                 Status: {response.status.toUpperCase()}
               </span>
+              {response.data_source?.is_offline_fixture ? (
+                <span className="badge" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontWeight: 'bold' }}>
+                  OFFLINE CACHED FIXTURE
+                </span>
+              ) : (
+                <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  LIVE OBSERVATIONS
+                </span>
+              )}
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                 Target: <strong>{response.analysis?.target_species_queried}</strong>
               </span>
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-              Provider: {response.data_source?.provider}
+              Provider: {response.data_source?.provider} {response.data_source?.active_data_mode ? `(${response.data_source.active_data_mode})` : ''}
             </span>
           </div>
 

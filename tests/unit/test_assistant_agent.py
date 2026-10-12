@@ -531,6 +531,7 @@ async def test_assistant_agent_failure_reports_failed_status_gracefully():
     # Tool call status must be failed
     weather_call = next(c for c in res.tool_calls if c.tool_name == "invoke_weather_agent")
     assert weather_call.status == "failed"
+    assert weather_call.error is not None
     assert "upstream service unavailable" in weather_call.error.lower()
 
     # Agent result must report failed
@@ -620,6 +621,7 @@ async def test_assistant_route_identical_endpoints_not_silently_substituted():
     assert route_call.arguments["destination_longitude"] == 72.0
 
     route_data = res.agent_results.get("Route") or res.agent_results.get("Route Agent")
+    assert route_data is not None
     assert route_data["observations"]["total_distance_km"] == 0.0
     assert any("identical" in w.lower() for w in route_data.get("warnings", []))
 

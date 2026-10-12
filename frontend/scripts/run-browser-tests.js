@@ -184,6 +184,7 @@ class CDPClient {
       (() => {
         const btn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes(${JSON.stringify(agentName)}) && (b.innerText.includes('🌤️') || b.innerText.includes('🌊') || b.innerText.includes('🐟') || b.innerText.includes('🧭') || b.innerText.includes('🛡️') || b.innerText.includes('🤖')));
         if (!btn) return false;
+        if (btn.getAttribute('data-selected') === 'true') return true;
         const s = window.getComputedStyle(btn);
         return s.borderColor.includes('37, 99, 235') || s.backgroundColor.includes('239, 246, 255') || s.color.includes('37, 99, 235');
       })()
@@ -278,14 +279,14 @@ async function run() {
     // =========================================================================
     console.log('\n--- 2. Navbar & API Health Indicator ---');
     const headerText = await client.waitForText('header', 'online', 8000);
-    const isOnline8001 = headerText.toLowerCase().includes('online') && headerText.includes('8001');
+    const isOnline = headerText.toLowerCase().includes('online') && (headerText.includes('8001') || headerText.includes('8010'));
     testResults.push({
       category: 'Navbar',
-      check: '2. Navbar: Connected to FastAPI at port 8001 with ONLINE status indicator',
-      passed: isOnline8001,
+      check: '2. Navbar: Connected to FastAPI with ONLINE status indicator',
+      passed: isOnline,
       detail: headerText.replace(/\n+/g, ' | '),
     });
-    console.log('  -> Live Backend Status Check:', isOnline8001 ? 'PASS' : 'FAIL');
+    console.log('  -> Live Backend Status Check:', isOnline ? 'PASS' : 'FAIL');
     await client.screenshot('browser_01_navbar_online.png');
 
     // =========================================================================

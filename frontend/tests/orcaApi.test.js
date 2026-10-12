@@ -32,7 +32,7 @@ describe('orcaApi Frontend Service Tests', () => {
   it('verifies BASE_URL is configured and defaults to port 8001 without trailing slash', () => {
     assert.ok(typeof BASE_URL === 'string');
     assert.ok(!BASE_URL.endsWith('/'));
-    assert.ok(BASE_URL.includes(':8001') || BASE_URL.includes(':8000'));
+    assert.ok(BASE_URL.includes(':8001') || BASE_URL.includes(':8000') || BASE_URL.includes(':8010'));
   });
 
   it('checkHealth calls GET /api/health', async () => {

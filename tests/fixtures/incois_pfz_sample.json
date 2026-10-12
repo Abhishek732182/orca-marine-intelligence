@@ -1,0 +1,66 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "agency": "INCOIS - Ministry of Earth Sciences, Govt of India",
+    "advisory_type": "Potential Fishing Zone (PFZ) Advisory",
+    "bulletin_number": "INCOIS-PFZ-GOA-2026-10-12",
+    "issued_at": "2026-10-12T04:00:00Z",
+    "sector": "Goa-Maharashtra Coastal & Continental Shelf"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "pfz-goa-01",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8, 15.2],
+            [73.4, 15.2],
+            [73.4, 15.7],
+            [72.8, 15.7],
+            [72.8, 15.2]
+          ]
+        ]
+      },
+      "properties": {
+        "bulletin_id": "INCOIS-PFZ-GOA-2026-10-12",
+        "sector": "Goa Offshore Waters",
+        "landing_centre": "Malim / Panaji",
+        "bearing_deg": 265.0,
+        "distance_km": 42.0,
+        "depth_m": 45.0,
+        "valid_from": "2026-10-12T00:00:00Z",
+        "valid_to": "2026-10-15T00:00:00Z",
+        "sst_c": 28.4,
+        "chlorophyll_mg_m3": 0.85,
+        "target_species": ["Mackerel", "Tuna", "Sardine"],
+        "advisory_text": "Ocean color front and thermal gradient detected 42 km WSW of Panaji.",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "pfz-goa-02",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [73.2, 14.8]
+      },
+      "properties": {
+        "bulletin_id": "INCOIS-PFZ-GOA-2026-10-12",
+        "sector": "Karwar-Goa South",
+        "landing_centre": "Karwar",
+        "bearing_deg": 290.0,
+        "distance_km": 30.0,
+        "depth_m": 35.0,
+        "valid_from": "2026-10-12T00:00:00Z",
+        "valid_to": "2026-10-15T00:00:00Z",
+        "sst_c": 28.1,
+        "chlorophyll_mg_m3": 0.92,
+        "target_species": ["Mackerel", "Carangids"],
+        "advisory_text": "Coastal upwelling front along 35m isobath.",
+        "confidence": "MODERATE"
+      }
+    }
+  ]
+}
