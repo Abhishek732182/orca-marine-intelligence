@@ -108,9 +108,12 @@ def generate_deterministic_synthesis(
     fz_info = derived_estimates.get("fisheries_suitability")
     if fz_info:
         feas = fz_info.get("operational_feasibility", "UNVERIFIED")
+        suit = fz_info.get("zone_suitability", "INSUFFICIENT_EVIDENCE")
         lines.append(
-            f"- **Fisheries & Operability:** Physical wave operability is rated **{feas}**. "
-            f"Direct biological fish distributions remain **INSUFFICIENT_EVIDENCE** (no fish coordinates, biomass, or catch probabilities inferred)."
+            f"- **Fisheries & Operability:** Physical wave operability is rated **{feas}**; "
+            f"environmental habitat suitability is rated **{suit}**. "
+            f"Direct biological fish distributions remain **INSUFFICIENT_EVIDENCE** "
+            f"(environmental suitability does not indicate actual fish presence, catch probability, biomass, or validated prediction)."
         )
 
     # 5. Warnings and Inconsistencies
@@ -222,7 +225,22 @@ async def synthesize_mission_advisory(
                 return deterministic_text, "deterministic"
 
         # Rule C: Text must not hallucinate catch probabilities or verified fish biomass
-        if "catch probability:" in text_lower or "biomass estimate:" in text_lower or "tons/km" in text_lower:
+        if (
+            "catch probability:" in text_lower
+            or "biomass estimate:" in text_lower
+            or "tons/km" in text_lower
+            or "guaranteed catch" in text_lower
+            or "verified fish school" in text_lower
+        ):
+            return deterministic_text, "deterministic"
+
+        # Rule D: Text must not present route as certified navigational route or wave info as safety clearance
+        if (
+            "certified navigational route" in text_lower
+            or "official navigational track" in text_lower
+            or "wave clearance granted" in text_lower
+            or "vessel safety clearance granted" in text_lower
+        ):
             return deterministic_text, "deterministic"
 
         return raw_llm_text.strip(), "llm"

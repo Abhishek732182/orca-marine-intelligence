@@ -11,6 +11,25 @@ Scientific Standards & Citations:
    - Vol. 2: Scombroids of the World (Collette & Nauen, 1983) for Thunnus albacares (Yellowfin Tuna).
 4. Indian Ocean Tuna Commission (IOTC):
    - Scientific Committee Reports on tropical tuna habitat and thermal preferences.
+
+Code Discrepancy Notice (v2.8.1):
+  Two species codes are contested between historical project usage and current FAO ASFIS records.
+  CMFRI has NOT confirmed their preferred scheme; clarification is a formal submission blocker:
+
+  a) Indian Mackerel (Rastrelliger kanagurta):
+     - Project history (v2.1–v2.8.0) used `RAK` following common INCOIS PFZ notation.
+     - Current FAO ASFIS list (https://www.fao.org/fishery/en/collection/asfis/en) lists
+       Rastrelliger kanagurta under code `RAG`.
+     - CMFRI landing statistics may use either; the formal requisition requests CMFRI to
+       confirm their preferred 3-alpha code. Both `RAK` and `RAG` are registered as aliases.
+
+  b) Silver Pomfret (Pampus argenteus):
+     - Project history used `POA` based on older FAO catalog references.
+     - Current FAO ASFIS list assigns `SIP` to Pampus argenteus.
+     - Both `POA` and `SIP` are registered as aliases. CMFRI confirmation required.
+
+  These discrepancies do NOT affect software functionality (aliases resolve both codes) but
+  must be resolved before formal data import to ensure consistent CPUE attribution.
 """
 
 from typing import Any
@@ -21,13 +40,20 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
         "common_name": "Indian Mackerel",
         "scientific_name": "Rastrelliger kanagurta",
         "family": "Scombridae",
-        "aliases": ["mackerel", "indian mackerel", "rastrelliger", "rastrelliger kanagurta", "bangda"],
+        # CODE DISCREPANCY (v2.8.1): FAO ASFIS current code is RAG; project historically used RAK
+        # (common in INCOIS PFZ bulletins and older CMFRI publications). Both are registered.
+        # CMFRI must confirm preferred code before formal data delivery. See module docstring.
+        "fao_code": "RAG",  # Current FAO ASFIS code; historical/INCOIS alias: RAK
+        # historical_fao_codes: matched with exact equality (not fuzzy substring) to avoid false positives
+        "historical_fao_codes": ["RAK"],
+        "aliases": ["mackerel", "indian mackerel", "rastrelliger", "rastrelliger kanagurta",
+                    "bangda"],  # NOTE: 3-letter FAO codes NOT here — use fao_code / historical_fao_codes
         "sst_optimal_min_c": 26.0,
         "sst_optimal_max_c": 30.0,
         "sst_tolerable_min_c": 24.0,
         "sst_tolerable_max_c": 31.5,
         "depth_range_m": "10-50 m (coastal neritic, epipelagic)",
-        "citation": "CMFRI Species Profile / INCOIS PFZ Operational Guidelines",
+        "citation": "CMFRI Species Profile / INCOIS PFZ Operational Guidelines / FAO ASFIS (RAG; alias RAK)",
         "habitat_notes": (
             "Coastal neritic waters, schooling epipelagic, planktivorous feeding on copepods and diatom blooms. "
             "Strongly associated with thermal gradient fronts and post-monsoon upwelling."
@@ -35,19 +61,42 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
     },
     "tuna": {
         "key": "tuna",
-        "common_name": "Yellowfin Tuna / Oceanic Tuna",
+        "common_name": "Yellowfin Tuna",
         "scientific_name": "Thunnus albacares",
         "family": "Scombridae",
-        "aliases": ["tuna", "yellowfin", "yellowfin tuna", "thunnus", "thunnus albacares", "skipjack", "kera"],
+        "fao_code": "YFT",
+        "aliases": [
+            "tuna", "yellowfin", "yellowfin tuna", "thunnus", "thunnus albacares", "kera", "oceanic tuna",
+        ],  # NOTE: 3-letter FAO code "yft" NOT here — matched via fao_code exact check
         "sst_optimal_min_c": 24.0,
         "sst_optimal_max_c": 29.0,
         "sst_tolerable_min_c": 21.0,
         "sst_tolerable_max_c": 31.0,
         "depth_range_m": "0-250 m (epipelagic / upper mesopelagic continental shelf break)",
-        "citation": "FAO Fisheries Synopsis No. 125, Vol. 2; IOTC Scientific Reports",
+        "citation": "FAO Fisheries Synopsis No. 125, Vol. 2; IOTC Scientific Reports; FAO ASFIS (YFT)",
         "habitat_notes": (
             "Highly migratory oceanic pelagic. Aggregates around shelf breaks, seamounts, "
             "and thermal convergence fronts with deep mixed layers."
+        ),
+    },
+    "skipjack_tuna": {
+        "key": "skipjack_tuna",
+        "common_name": "Skipjack Tuna",
+        "scientific_name": "Katsuwonus pelamis",
+        "family": "Scombridae",
+        "fao_code": "SKJ",
+        "aliases": [
+            "skipjack", "skipjack tuna", "katsuwonus", "katsuwonus pelamis", "striped bonito", "choora",
+        ],  # NOTE: 3-letter FAO code "skj" NOT here — matched via fao_code exact check
+        "sst_optimal_min_c": 24.0,
+        "sst_optimal_max_c": 28.5,
+        "sst_tolerable_min_c": 20.0,
+        "sst_tolerable_max_c": 30.0,
+        "depth_range_m": "0-260 m (epipelagic, oceanic)",
+        "citation": "FAO Species Catalogue Vol. 2 (Collette & Nauen, 1983); IOTC Scientific Reports; FAO ASFIS (SKJ)",
+        "habitat_notes": (
+            "Highly migratory oceanic pelagic schooling around seamounts, convergence lines, and deep mixed layer fronts. "
+            "Major commercial tuna component in the Indian Ocean."
         ),
     },
     "sardine": {
@@ -55,13 +104,15 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
         "common_name": "Indian Oil Sardine",
         "scientific_name": "Sardinella longiceps",
         "family": "Clupeidae",
+        "fao_code": "IOS",
         "aliases": ["sardine", "oil sardine", "indian oil sardine", "sardinella", "sardinella longiceps", "tarli"],
+        # NOTE: 3-letter FAO code "ios" NOT here — matched via fao_code exact check
         "sst_optimal_min_c": 27.0,
         "sst_optimal_max_c": 30.0,
         "sst_tolerable_min_c": 25.0,
         "sst_tolerable_max_c": 31.5,
         "depth_range_m": "5-35 m (shallow coastal pelagic)",
-        "citation": "CMFRI Bulletin No. 16; Pillai et al., Indian J. Fish.",
+        "citation": "CMFRI Bulletin No. 16; Pillai et al., Indian J. Fish.; FAO ASFIS (IOS)",
         "habitat_notes": (
             "Schooling clupeid in coastal waters. Feeds primarily on phytoplankton (Fragilariopsis, Coscinodiscus). "
             "Abundance strongly linked to coastal monsoonal upwelling and diatom blooms."
@@ -72,13 +123,16 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
         "common_name": "Bombay Duck",
         "scientific_name": "Harpadon nehereus",
         "family": "Synodontidae",
+        "fao_code": "DUC",  # Current FAO ASFIS code; historical alias: BBZ
+        "historical_fao_codes": ["BBZ"],
         "aliases": ["bombay duck", "bombil", "harpadon", "harpadon nehereus"],
+        # NOTE: 3-letter FAO codes NOT here — matched via fao_code / historical_fao_codes exact check
         "sst_optimal_min_c": 25.0,
         "sst_optimal_max_c": 29.0,
         "sst_tolerable_min_c": 23.0,
         "sst_tolerable_max_c": 31.0,
         "depth_range_m": "10-50 m (demersal, shelf/estuarine)",
-        "citation": "CMFRI Marine Fisheries Information Service No. 102",
+        "citation": "CMFRI Marine Fisheries Information Service No. 102; FAO ASFIS (DUC)",
         "habitat_notes": (
             "Demersal carnivore inhabiting soft muddy bottom substrates in continental shelf and estuarine zones. "
             "Sensitive to extreme salinity swings and bottom thermal variations."
@@ -89,13 +143,20 @@ SPECIES_REGISTRY: dict[str, dict[str, Any]] = {
         "common_name": "Silver Pomfret",
         "scientific_name": "Pampus argenteus",
         "family": "Stromateidae",
-        "aliases": ["pomfret", "silver pomfret", "pampus", "pampus argenteus", "paplet", "white pomfret"],
+        # CODE DISCREPANCY (v2.8.1): FAO ASFIS current code is SIP; project historically used POA
+        # (from older catalog references). Both are registered.
+        # CMFRI must confirm preferred code before formal data delivery. See module docstring.
+        "fao_code": "SIP",  # Current FAO ASFIS code; historical/project alias: POA
+        # historical_fao_codes: matched with exact equality (not fuzzy substring) to avoid false positives
+        "historical_fao_codes": ["POA"],
+        "aliases": ["pomfret", "silver pomfret", "pampus", "pampus argenteus",
+                    "paplet", "white pomfret"],  # NOTE: 3-letter FAO codes NOT here — use fao_code / historical_fao_codes
         "sst_optimal_min_c": 25.0,
         "sst_optimal_max_c": 29.5,
         "sst_tolerable_min_c": 22.0,
         "sst_tolerable_max_c": 31.0,
         "depth_range_m": "15-60 m (coastal neritic, benthopelagic)",
-        "citation": "CMFRI Species Profile / Marine Fisheries Information Service No. 165",
+        "citation": "CMFRI Species Profile / Marine Fisheries Information Service No. 165; FAO ASFIS (SIP; alias POA)",
         "habitat_notes": (
             "Schooling benthopelagic species in coastal waters over muddy and sandy substrates. "
             "Feeds on ctenophores, salps, copepods, and zooplankton. Commercially important along West Coast India."
@@ -120,7 +181,7 @@ def lookup_species(target_species: str | None) -> dict[str, Any]:
 
     query = target_species.strip().lower()
 
-    # Exact key or alias match
+    # Exact key, FAO code, or alias match
     for species_key, info in SPECIES_REGISTRY.items():
         if query == species_key:
             return {
@@ -130,6 +191,25 @@ def lookup_species(target_species: str | None) -> dict[str, Any]:
                 "species_info": info,
                 "note": f"Species '{info['common_name']}' ({info['scientific_name']}) recognized in documented registry.",
             }
+        fao = (info.get("fao_code") or "").strip().lower()
+        if fao and query == fao:
+            return {
+                "status": "SUPPORTED",
+                "queried_name": target_species,
+                "resolved_name": info["common_name"],
+                "species_info": info,
+                "note": f"Species '{info['common_name']}' ({info['scientific_name']}) recognized via FAO code '{info['fao_code']}'.",
+            }
+        # Check historical/alternate FAO codes with EXACT equality (not fuzzy substring)
+        for hist_code in info.get("historical_fao_codes", []):
+            if query == hist_code.lower():
+                return {
+                    "status": "SUPPORTED",
+                    "queried_name": target_species,
+                    "resolved_name": info["common_name"],
+                    "species_info": info,
+                    "note": f"Species '{info['common_name']}' ({info['scientific_name']}) recognized via historical FAO code '{hist_code}'.",
+                }
         for alias in info["aliases"]:
             if alias in query or query in alias:
                 return {

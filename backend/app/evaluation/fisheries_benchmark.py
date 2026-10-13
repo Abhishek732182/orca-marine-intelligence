@@ -303,17 +303,44 @@ class FisheriesBenchmarkEvaluator:
             )
 
         # In case labeled records are supplied in future datasets:
-        return MetricResult(
-            metric_id=metric_id,
-            metric_name="Biological Classification Metrics (Precision/Recall/F1)",
-            category="accuracy",
-            status="evaluated",
-            value=1.0,
-            numerator=len(labeled_records),
-            denominator=len(labeled_records),
-            eligibility_criteria=eligibility,
-            interpretation=f"Evaluated on {len(labeled_records)} ground-truth labeled records.",
-        )
+        preds = [st.get("predicted_presence_label") for st in labeled_records if "predicted_presence_label" in st]
+        if len(preds) == len(labeled_records):
+            tp = sum(1 for st in labeled_records if st.get("biological_presence_label") in [True, "PRESENT"] and st.get("predicted_presence_label") in [True, "PRESENT"])
+            fp = sum(1 for st in labeled_records if st.get("biological_presence_label") not in [True, "PRESENT"] and st.get("predicted_presence_label") in [True, "PRESENT"])
+            fn = sum(1 for st in labeled_records if st.get("biological_presence_label") in [True, "PRESENT"] and st.get("predicted_presence_label") not in [True, "PRESENT"])
+            tn = sum(1 for st in labeled_records if st.get("biological_presence_label") not in [True, "PRESENT"] and st.get("predicted_presence_label") not in [True, "PRESENT"])
+            precision = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0.0
+            recall = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0.0
+            f1 = round(2 * precision * recall / (precision + recall), 4) if (precision + recall) > 0 else 0.0
+            acc = round((tp + tn) / len(labeled_records), 4) if len(labeled_records) > 0 else 0.0
+            return MetricResult(
+                metric_id=metric_id,
+                metric_name="Biological Classification Metrics (Precision/Recall/F1)",
+                category="accuracy",
+                status="evaluated",
+                value=acc,
+                numerator=tp + tn,
+                denominator=len(labeled_records),
+                eligibility_criteria=eligibility,
+                interpretation=f"Evaluated on {len(labeled_records)} ground-truth labeled records (Accuracy: {acc*100:.1f}%, Precision: {precision*100:.1f}%, Recall: {recall*100:.1f}%, F1: {f1*100:.1f}).",
+                details={"tp": tp, "fp": fp, "fn": fn, "tn": tn, "precision": precision, "recall": recall, "f1": f1},
+            )
+        else:
+            return MetricResult(
+                metric_id=metric_id,
+                metric_name="Biological Classification Metrics (Precision/Recall/F1)",
+                category="accuracy",
+                status="not_evaluable",
+                value=None,
+                numerator=None,
+                denominator=len(labeled_records),
+                eligibility_criteria=eligibility,
+                interpretation=(
+                    f"Ground-truth labels present ({len(labeled_records)}) but model predictions absent ({len(preds)}). "
+                    "Predictive accuracy, Precision, Recall, and F1 remain NOT_EVALUABLE."
+                ),
+                details={"verified_labels_count": len(labeled_records), "predictions_count": len(preds)},
+            )
 
     # --------------------------------------------------------------------------
     # 2. Scientific Rule Consistency

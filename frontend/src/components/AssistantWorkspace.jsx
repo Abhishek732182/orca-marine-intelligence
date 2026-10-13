@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { chatAssistant, approveTool, getDeduplicatedAgentResults } from '../services/orcaApi';
+import { chatAssistant, getDeduplicatedAgentResults } from '../services/orcaApi';
 
 const AGENT_OPTIONS = [
   { id: 'auto', name: 'Auto (Orchestrator)', icon: '🤖', desc: 'Auto-dispatch specialists based on intent' },
@@ -201,82 +201,80 @@ function renderMarkdown(content) {
   return <div className="rendered-markdown">{elements}</div>;
 }
 
+const INITIAL_WELCOME_MESSAGES = [
+  {
+    id: 'welcome',
+    role: 'assistant',
+    content:
+      '**ORCA Marine Intelligence Assessment: Active**\n\n' +
+      'Operational advisory for Western Indian Continental Shelf (Goa to Mumbai).\n' +
+      'Specialist telemetry gathered from Open-Meteo Marine & Atmospheric models.',
+    timestamp: '2026-10-13T10:00:00.000Z',
+    summary: 'Offshore Goa sector conditions analyzed. Moderate sea state with acceptable transit envelope for commercial craft.',
+    risk: {
+      level: 'MODERATE RISK',
+      type: 'amber',
+      reason: 'Significant wave heights reaching 1.85m in offshore transit corridor; wind gusts up to 22 kts.',
+    },
+    metrics: {
+      wind: '18.5 kts (Beaufort 5)',
+      waves: '1.85 m (Moderate, WMO 4)',
+      visibility: '10.0 km (Good)',
+      cyclone: 'Low / Monitored',
+    },
+    recommendations: [
+      'Small crafts (<12m) advised to maintain coastal proximity inside 12 NM.',
+      'Commercial transit vessels (>25m) cleared for standard passage via waypoint corridor.',
+      'Continuous monitoring advised: Swell period averaging 7.2 seconds from West-Southwest.',
+    ],
+    plan: [
+      { step_id: 1, description: 'Retrieve atmospheric telemetry for Goa sector', tool_name: 'invoke_weather_agent', status: 'completed' },
+      { step_id: 2, description: 'Query significant wave height and WMO 3700 sea state', tool_name: 'invoke_ocean_agent', status: 'completed' },
+      { step_id: 3, description: 'Assess vessel operability envelopes against safety rules', tool_name: 'invoke_safety_risk_agent', status: 'completed' },
+    ],
+    agent_results: {
+      'Weather Agent': {
+        status: 'success',
+        analysis: { summary: 'Air temperature 29.4°C, Wind 18.5 kts from 265° (Fresh breeze). Good visibility.' },
+      },
+      'Ocean Agent': {
+        status: 'success',
+        analysis: { summary: 'Significant wave height 1.85m (Moderate, WMO Code 4). Mean swell direction 250°.' },
+      },
+      'Safety/Risk Agent': {
+        status: 'success',
+        analysis: { summary: 'Risk Level: MODERATE. Safe for commercial and deep-sea vessels; small craft caution.' },
+      },
+      'Route Agent': {
+        status: 'success',
+        observations: { total_distance_km: 442, total_distance_nm: 238.7, estimated_transit_time_hours: 19.9 },
+        analysis: { summary: 'Estimated Great-Circle geodesic distance 442 km (238.7 NM) from Goa to Mumbai. Straight-line estimate only; does not verify navigability.' },
+      },
+    },
+    evidence_summary: {
+      coordinates: {
+        origin_lat: 15.0,
+        origin_lon: 72.0,
+        origin_name: 'Goa',
+        dest_lat: 18.9,
+        dest_lon: 72.8,
+        dest_name: 'Mumbai',
+        has_route: true,
+      },
+    },
+    limitations: [
+      'ORCA Assistant Guidance: Advisory generated for operational awareness. Straight-line route calculations are geodesic and do not verify hydrographic navigability. Absence of telemetry is strictly NOT safe.',
+    ],
+  },
+];
+
 export default function AssistantWorkspace({ onSwitchToSpecialists }) {
   const [selectedAgent, setSelectedAgent] = useState('auto');
   const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        '**ORCA Marine Intelligence Assessment: Active**\n\n' +
-        'Operational advisory for Western Indian Continental Shelf (Goa to Mumbai).\n' +
-        'Specialist telemetry gathered from Open-Meteo Marine & Atmospheric models.',
-      timestamp: new Date().toISOString(),
-      summary: 'Offshore Goa sector conditions analyzed. Moderate sea state with acceptable transit envelope for commercial craft.',
-      risk: {
-        level: 'MODERATE RISK',
-        type: 'amber',
-        reason: 'Significant wave heights reaching 1.85m in offshore transit corridor; wind gusts up to 22 kts.',
-      },
-      metrics: {
-        wind: '18.5 kts (Beaufort 5)',
-        waves: '1.85 m (Moderate, WMO 4)',
-        visibility: '10.0 km (Good)',
-        cyclone: 'Low / Monitored',
-      },
-      recommendations: [
-        'Small crafts (<12m) advised to maintain coastal proximity inside 12 NM.',
-        'Commercial transit vessels (>25m) cleared for standard passage via waypoint corridor.',
-        'Continuous monitoring advised: Swell period averaging 7.2 seconds from West-Southwest.',
-      ],
-      plan: [
-        { step_id: 1, description: 'Retrieve atmospheric telemetry for Goa sector', tool_name: 'invoke_weather_agent', status: 'completed' },
-        { step_id: 2, description: 'Query significant wave height and WMO 3700 sea state', tool_name: 'invoke_ocean_agent', status: 'completed' },
-        { step_id: 3, description: 'Assess vessel operability envelopes against safety rules', tool_name: 'invoke_safety_risk_agent', status: 'completed' },
-      ],
-      agent_results: {
-        'Weather Agent': {
-          status: 'success',
-          analysis: { summary: 'Air temperature 29.4°C, Wind 18.5 kts from 265° (Fresh breeze). Good visibility.' },
-        },
-        'Ocean Agent': {
-          status: 'success',
-          analysis: { summary: 'Significant wave height 1.85m (Moderate, WMO Code 4). Mean swell direction 250°.' },
-        },
-        'Safety/Risk Agent': {
-          status: 'success',
-          analysis: { summary: 'Risk Level: MODERATE. Safe for commercial and deep-sea vessels; small craft caution.' },
-        },
-        'Route Agent': {
-          status: 'success',
-          observations: { total_distance_km: 442, total_distance_nm: 238.7, estimated_transit_time_hours: 19.9 },
-          analysis: { summary: 'Estimated Great-Circle geodesic distance 442 km (238.7 NM) from Goa to Mumbai. Straight-line estimate only; does not verify navigability.' },
-        },
-      },
-      evidence_summary: {
-        coordinates: {
-          origin_lat: 15.0,
-          origin_lon: 72.0,
-          origin_name: 'Goa',
-          dest_lat: 18.9,
-          dest_lon: 72.8,
-          dest_name: 'Mumbai',
-          has_route: true,
-        },
-      },
-      limitations: [
-        'ORCA Assistant Guidance: Advisory generated for operational awareness. Straight-line route calculations are geodesic and do not verify hydrographic navigability. Absence of telemetry is strictly NOT safe.',
-      ],
-    },
-  ]);
+  const [messages, setMessages] = useState(INITIAL_WELCOME_MESSAGES);
 
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activePlan, setActivePlan] = useState([]);
-  const [activeToolCalls, setActiveToolCalls] = useState([]);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [approvingCallId, setApprovingCallId] = useState(null);
   const [activeTab, setActiveTab] = useState('map'); // 'map', 'data_sources', 'charts', 'details'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
@@ -324,11 +322,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
     : (routeData?.analysis?.distance_km != null 
       ? Number(routeData.analysis.distance_km) 
       : (hasRoute && destLat === 18.9 ? 442 : null));
-  const routeTransitHours = routeData?.observations?.estimated_transit_time_hours != null
-    ? Number(routeData.observations.estimated_transit_time_hours)
-    : (routeData?.analysis?.estimated_transit_hours != null
-      ? Number(routeData.analysis.estimated_transit_hours)
-      : null);
 
   const originX = (originLon >= 65 && originLon <= 85 && originLat >= 5 && originLat <= 25)
     ? Math.max(50, Math.min(350, ((originLon - 68) / 10) * 260 + 80))
@@ -356,9 +349,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
 
   const handleNewConversation = () => {
     setConversationId(null);
-    setActivePlan([]);
-    setActiveToolCalls([]);
-    setErrorMsg(null);
     setMessages([
       {
         id: `welcome-${Date.now()}`,
@@ -375,7 +365,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
     const text = textToSend || inputMessage;
     if (!text.trim() || loading) return;
 
-    setErrorMsg(null);
     const userMsg = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -397,9 +386,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
       if (res.conversation_id) {
         setConversationId(res.conversation_id);
       }
-
-      if (res.plan) setActivePlan(res.plan);
-      if (res.tool_calls) setActiveToolCalls(res.tool_calls);
 
       const ev = res.response_message?.evidence_summary || res.evidence_summary || {};
       const agentResults = res.response_message?.agent_results || res.agent_results || {};
@@ -445,7 +431,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
         setMessages((prev) => [...prev, assistantMsg]);
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Assistant request failed');
       setMessages((prev) => [
         ...prev,
         {
@@ -458,39 +443,6 @@ export default function AssistantWorkspace({ onSwitchToSpecialists }) {
       ]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleApprove = async (callId, decision) => {
-    if (!conversationId || approvingCallId) return;
-    setApprovingCallId(callId);
-
-    try {
-      const res = await approveTool({
-        conversation_id: conversationId,
-        call_id: callId,
-        decision,
-      });
-
-      setActiveToolCalls((prev) =>
-        prev.map((t) => (t.call_id === callId ? { ...t, status: res.status, output: res.result } : t))
-      );
-
-      const decisionText = decision === 'approve' ? 'Authorized and executed' : 'Denied by user';
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `approval-${Date.now()}`,
-          role: 'assistant',
-          content: `**Tool Authorization Result [${decision.toUpperCase()}]:**\n${decisionText}.\n\n` +
-            (res.result ? `\`\`\`json\n${JSON.stringify(res.result, null, 2)}\n\`\`\`` : ''),
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } catch (err) {
-      setErrorMsg(`Authorization failed: ${err.message}`);
-    } finally {
-      setApprovingCallId(null);
     }
   };
 

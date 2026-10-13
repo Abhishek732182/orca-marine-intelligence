@@ -375,13 +375,17 @@ def test_chlorophyll_linkage_freshness_preservation():
 # Test 15: All 5 CMFRI Pilot Species & Landing Centers Parsing
 # ==============================================================================
 def test_five_pilot_species_and_landing_centers_support():
-    """15. Validates all 5 CMFRI pilot species across 5 landing centers parse and resolve canonical taxonomy."""
-    multi_center_csv = """record_identifier,source_agency,dataset_identifier,observation_method,species_name,scientific_name,latitude,longitude,spatial_uncertainty_km,landing_center_name,observed_at,catch_weight,catch_unit,effort_value,effort_unit,gear_type,is_authorized
-rec-01,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Indian Mackerel,Rastrelliger kanagurta,15.503,73.827,10.0,Malim Jetty,2026-10-12T06:00:00Z,250.0,kg,5.0,hours,Purse Seine,true
-rec-02,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Indian Oil Sardine,Sardinella longiceps,16.985,73.280,12.0,Mirkarwada,2026-10-12T06:00:00Z,400.0,kg,8.0,hours,Ring Seine,true
-rec-03,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Yellowfin Tuna,Thunnus albacares,18.915,72.825,15.0,Sasoon Docks,2026-10-12T06:00:00Z,800.0,kg,16.0,hours,Longline,true
-rec-04,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Silver Pomfret,Pampus argenteus,14.805,74.120,8.0,Karwar Harbour,2026-10-12T06:00:00Z,180.0,kg,6.0,hours,Gillnet,true
-rec-05,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Bombay Duck,Harpadon nehereus,12.860,74.835,10.0,Mangalore Old Port,2026-10-12T06:00:00Z,300.0,kg,6.0,hours,Dol Net,true
+    """15. Validates all 5 CMFRI pilot species across 5 landing centers parse and resolve canonical taxonomy.
+
+    v2.8.1: CSV rows must supply an out-of-band access_authorization_token; self-declared
+    is_authorized=true alone is not sufficient.  Test fixture supplies mock tokens.
+    """
+    multi_center_csv = """record_identifier,source_agency,dataset_identifier,observation_method,species_name,scientific_name,latitude,longitude,spatial_uncertainty_km,landing_center_name,observed_at,catch_weight,catch_unit,effort_value,effort_unit,gear_type,is_authorized,access_authorization_token
+rec-01,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Indian Mackerel,Rastrelliger kanagurta,15.503,73.827,10.0,Malim Jetty,2026-10-12T06:00:00Z,250.0,kg,5.0,hours,Purse Seine,true,MOCK_AUTH_TOKEN_TEST_FIXTURE
+rec-02,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Indian Oil Sardine,Sardinella longiceps,16.985,73.280,12.0,Mirkarwada,2026-10-12T06:00:00Z,400.0,kg,8.0,hours,Ring Seine,true,MOCK_AUTH_TOKEN_TEST_FIXTURE
+rec-03,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Yellowfin Tuna,Thunnus albacares,18.915,72.825,15.0,Sasoon Docks,2026-10-12T06:00:00Z,800.0,kg,16.0,hours,Longline,true,MOCK_AUTH_TOKEN_TEST_FIXTURE
+rec-04,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Silver Pomfret,Pampus argenteus,14.805,74.120,8.0,Karwar Harbour,2026-10-12T06:00:00Z,180.0,kg,6.0,hours,Gillnet,true,MOCK_AUTH_TOKEN_TEST_FIXTURE
+rec-05,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Bombay Duck,Harpadon nehereus,12.860,74.835,10.0,Mangalore Old Port,2026-10-12T06:00:00Z,300.0,kg,6.0,hours,Dol Net,true,MOCK_AUTH_TOKEN_TEST_FIXTURE
 """
     importer = GroundTruthCsvImporter()
     summary = importer.import_csv(multi_center_csv, is_dry_run=False, now=FIXED_NOW)
@@ -395,7 +399,8 @@ rec-05,ICAR-CMFRI,cmfri-2024,COMMERCIAL_LANDING_STATISTIC,Bombay Duck,Harpadon n
     species_resolved = {r.metadata["canonical_species"] for r in summary.imported_records}
     assert "Indian Mackerel" in species_resolved
     assert "Indian Oil Sardine" in species_resolved
-    assert "Yellowfin Tuna / Oceanic Tuna" in species_resolved
+    # Registry common_name is "Yellowfin Tuna" (not the stale alias "Yellowfin Tuna / Oceanic Tuna")
+    assert "Yellowfin Tuna" in species_resolved
     assert "Silver Pomfret" in species_resolved
     assert "Bombay Duck" in species_resolved
 

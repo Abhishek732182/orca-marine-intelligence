@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const artifactsDir = process.env.ARTIFACTS_DIR || 'C:\\Users\\ABHINANDAN KUMAR\\.gemini\\antigravity-ide\\brain\\39587619-e750-48dd-a46b-e380e1e5f253';
+const artifactsDir = process.env.ARTIFACTS_DIR || 'C:\\Users\\ABHINANDAN KUMAR\\.gemini\\antigravity-ide\\brain\\98e50d50-840e-45cf-9ad1-1f0d5776e244';
 const profileDir = path.join(artifactsDir, 'scratch', 'chrome_test_profile');
 
 fs.mkdirSync(artifactsDir, { recursive: true });

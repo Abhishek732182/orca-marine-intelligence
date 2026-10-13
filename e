@@ -1,0 +1,112 @@
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:3: trailing whitespace.
+[32m+[m[32m**Date / Time:** 2026-10-13 11:35 UTC+5:30[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:4: trailing whitespace.
+[32m+[m[32m**Target Repository:** ORCA Marine Intelligence & Advisory Platform (`D:\orca`)[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:5: trailing whitespace.
+[32m+[m[32m**Core Requisition Package:** [`CMFRI_DATA_REQUISITION_PACKAGE_v2_8.md`](file:///d:/orca/CMFRI_DATA_REQUISITION_PACKAGE_v2_8.md)[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:6: trailing whitespace.
+[32m+[m[32m**Readiness Audit Reference:** [`docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md`](file:///d:/orca/docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md)[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:93: trailing whitespace.
+[32m+[m[32m1. **Authorization & Token Delivery:**[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:95: trailing whitespace.
+[32m+[m[32m2. **Species Coding Standards:**[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:97: trailing whitespace.
+[32m+[m[32m3. **Temporal Granularity & Effort Reporting:**[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:99: trailing whitespace.
+[32m+[m[32m4. **Spatial Reference Convention:**[m[41m  [m
+docs/CMFRI_SUBMISSION_READINESS_CHECKLIST.md:101: trailing whitespace.
+[32m+[m[32m5. **Administrative Form & Fee Schedule:**[m[41m  [m
+docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md:3: trailing whitespace.
+[32m+[m[32m**Date / Time:** 2026-10-13 11:00 UTC+5:30[m[41m  [m
+docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md:4: trailing whitespace.
+[32m+[m[32m**Repository Location:** `D:\orca`[m[41m  [m
+docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md:5: trailing whitespace.
+[32m+[m[32m**Target Specification:** `CMFRI_DATA_REQUISITION_PACKAGE_v2_8.md`[m[41m  [m
+docs/V2_8_1_ONBOARDING_READINESS_AUDIT.md:6: trailing whitespace.
+[32m+[m[32m**Software Baseline:** ORCA Marine Intelligence & Advisory Platform `v2.8.1`[m[41m  [m
+docs/V2_9_1_END_TO_END_VALIDATION.md:4: trailing whitespace.
+[32m+[m[32m**Date of Execution:** 2026-10-13[m[41m  [m
+docs/V2_9_1_END_TO_END_VALIDATION.md:5: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V2_9_1_END_TO_END_VALIDATION.md:6: trailing whitespace.
+[32m+[m[32m**Software Baseline:** ORCA Marine Intelligence & Advisory Platform `v2.9.1`[m[41m  [m
+docs/V2_9_1_END_TO_END_VALIDATION.md:7: trailing whitespace.
+[32m+[m[32m**Final Validation Classification:** **`PASS_WITH_KNOWN_LIMITATIONS`**[m[41m  [m
+docs/V2_9_1_END_TO_END_VALIDATION.md:233: trailing whitespace.
+[32m+[m[32m**Sign-off Decision:** **`PASS_WITH_KNOWN_LIMITATIONS`**[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:4: trailing whitespace.
+[32m+[m[32m**Date of Execution:** 2026-10-13[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:5: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:6: trailing whitespace.
+[32m+[m[32m**Software Baseline:** ORCA Marine Intelligence & Advisory Platform `v2.9.2`[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:7: trailing whitespace.
+[32m+[m[32m**Preceding Audit Reference:** [`V2_9_1_END_TO_END_VALIDATION.md`](file:///D:/orca/docs/V2_9_1_END_TO_END_VALIDATION.md)[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:8: trailing whitespace.
+[32m+[m[32m**Final Release Classification:** **`PASS_WITH_KNOWN_LIMITATIONS`**[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:18: trailing whitespace.
+[32m+[m[32m- **Software & Pipeline Integrity:** **`PASS`**[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:24: trailing whitespace.
+[32m+[m[32m- **Scientific & Upstream Boundaries:** **`WITH_KNOWN_LIMITATIONS`**[m[41m  [m
+docs/V2_9_2_RELEASE_HARDENING.md:200: trailing whitespace.
+[32m+[m[32m**Sign-off Decision:** **`PASS_WITH_KNOWN_LIMITATIONS`**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:4: trailing whitespace.
+[32m+[m[32m**Date of Verification:** 2026-10-13[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:5: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:6: trailing whitespace.
+[32m+[m[32m**Software Baseline:** v2.9.2 $\rightarrow$ **Target: v3.0**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:7: trailing whitespace.
+[32m+[m[32m**Executive Release Classification:** **`READY_FOR_DEPLOYMENT_WITH_LIMITATIONS`**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:29: trailing whitespace.
+[32m+[m[32m**Justification for Decision:**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:248: trailing whitespace.
+[32m+[m[32m- **Invariant 1: Missing Evidence $\ne$ Safe Condition.**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:250: trailing whitespace.
+[32m+[m[32m- **Invariant 2: Operational Wave Feasibility $\ne$ Fish Presence.**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:252: trailing whitespace.
+[32m+[m[32m- **Invariant 3: Geodesic Calculation $\ne$ Navigational Passage Plan.**[m[41m  [m
+docs/V3_0_RELEASE_READINESS.md:254: trailing whitespace.
+[32m+[m[32m- **Invariant 4: Discrepancy Warnings Without Telemetry Mutation.**[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:4: trailing whitespace.
+[32m+[m[32m**Document Version:** 3.2.0[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:5: trailing whitespace.
+[32m+[m[32m**Date of Audit:** 2026-10-13[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:6: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:7: trailing whitespace.
+[32m+[m[32m**Operational Biological Store Status:** `AWAITING_AUTHORIZED_DATA`[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:8: trailing whitespace.
+[32m+[m[32m**CMFRI Requisition Package Status:** `DRAFT — PENDING PI SIGNATURE AND SUBMISSION`[m[41m  [m
+docs/V3_2_BIOLOGICAL_ONBOARDING_READINESS.md:9: trailing whitespace.
+[32m+[m[32m**Predictive Fisheries Model Status:** `NO_TRAINED_MODEL — PREDICTIONS DISABLED`[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:4: trailing whitespace.
+[32m+[m[32m**Document Version:** 3.3.0[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:5: trailing whitespace.
+[32m+[m[32m**Date of Audit:** 2026-10-13[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:6: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:7: trailing whitespace.
+[32m+[m[32m**Operational Biological Store Status:** `AWAITING_AUTHORIZED_DATA`[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:8: trailing whitespace.
+[32m+[m[32m**Requisition Package Status:** `DRAFT — PENDING MANUAL PI SIGNATURE & DISPATCH`[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:9: trailing whitespace.
+[32m+[m[32m**External Submission Status:** `UNSUBMITTED — NO FORMS TRANSMITTED, NO EMAILS SENT`[m[41m  [m
+docs/V3_3_INSTITUTIONAL_DATA_ACQUISITION_TRACKER.md:10: trailing whitespace.
+[32m+[m[32m**Biological Model Status:** `NO_TRAINED_MODEL — PREDICTIONS STRICTLY WITHHELD`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:4: trailing whitespace.
+[32m+[m[32m**Document Version:** 3.4.0[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:5: trailing whitespace.
+[32m+[m[32m**Date of Plan:** 2026-10-13[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:6: trailing whitespace.
+[32m+[m[32m**Target Repository:** `D:\orca`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:7: trailing whitespace.
+[32m+[m[32m**Operational Biological Store Status:** `AWAITING_AUTHORIZED_DATA`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:8: trailing whitespace.
+[32m+[m[32m**Requisition Package Status:** `DRAFT — PENDING MANUAL PI SIGNATURE & DISPATCH`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:9: trailing whitespace.
+[32m+[m[32m**External Submission Status:** `UNSUBMITTED — NO FORMS TRANSMITTED, NO EMAILS SENT`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:10: trailing whitespace.
+[32m+[m[32m**Biological Model Status:** `NO_TRAINED_MODEL — PREDICTIONS STRICTLY WITHHELD`[m[41m  [m
+docs/V3_4_DATA_ACQUISITION_ACTION_PLAN.md:11: trailing whitespace.
+[32m+[m[32m**Onboarding Test Suite Status:** `65/65 TESTS PASSING (100%)`[m[41m  [m

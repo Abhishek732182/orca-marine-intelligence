@@ -57,7 +57,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#FFFFFF' }}>
-      <Navbar onToggleView={() => setWorkspaceMode(workspaceMode === 'assistant' ? 'specialists' : 'assistant')} currentView={workspaceMode} />
+      <Navbar />
 
       {/* Top Workspace Navigation Switcher */}
       <div

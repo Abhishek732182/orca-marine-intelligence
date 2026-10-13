@@ -16,12 +16,12 @@ import asyncio
 from datetime import datetime, timezone
 import logging
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 import httpx
 
 from app.core.config import settings
 from app.data_sources.base import MarineDataProvider
-from app.data_sources.erddap_client import ErddapClient, ErddapMode, ErddapSnapshot
+from app.data_sources.erddap_client import ErddapClient
 from app.data_sources.incois_pfz import IncoisPfzBulletinParser, IncoisPfzClient
 from app.schemas.evidence import EvidenceRecord
 
@@ -45,7 +45,7 @@ class FisheriesIngestionWorker(MarineDataProvider):
         self.erddap_client = erddap_client or ErddapClient(
             base_url=settings.erddap_base_url,
             cache_dir=self.cache_dir,
-            mode=cast(ErddapMode, settings.erddap_mode),
+            mode=settings.erddap_mode,
         )
         self.incois_parser = IncoisPfzBulletinParser()
 

@@ -1,0 +1,74 @@
+# ORCA Fisheries Intelligence v2.8 — Pilot Readiness & Scientific Validation Report
+
+**Document Version:** 2.8.0  
+**Pilot Target Area:** Eastern Arabian Sea Corridor (Goa, Malim, Ratnagiri, Mumbai, Karwar, Mangalore)  
+**Accepted Baseline:** v2.7  
+**Final Baseline:** v2.8  
+**Operational Biological Store Status:** `AWAITING_AUTHORIZED_DATA`  
+**Classification:** `SOFTWARE_DEMO_READY` / `AWAITING_AUTHORIZED_DATA`  
+
+---
+
+## 1. Executive Summary
+
+This report delivers the comprehensive pilot readiness assessment and scientific validation evaluation for **ORCA v2.8**. 
+
+ORCA has reached complete software, algorithmic, and operational readiness for software demonstrations and controlled simulation testing. However, in accordance with scientific ethics and the platform's strict zero-data-fabrication mandate:
+- Biological prediction accuracy metrics (Precision, Recall, F1) remain explicitly designated as **`NOT_EVALUABLE`** until independent, authorized ground-truth catch records from ICAR-CMFRI or FSI are formally obtained and ingested.
+- The operational biological evidence store contains **0 records** (`AWAITING_AUTHORIZED_DATA`).
+- Live satellite chlorophyll-a usable coverage over the pilot corridor is **0.0%** due to persistent high cloud cover masking in NOAA CoastWatch VIIRS passes, which are older than the enforced 24-hour freshness window.
+- The platform operates in a transparent, gracefully degraded mode: physical sea state (wave height, period, swell) and sea surface temperature (SST) are validated and rendered, while biological presences and chlorophyll-a are explicitly flagged as unavailable.
+
+---
+
+## 2. Pilot Geographic Scope & Harbor Definitions
+
+The operational pilot focuses on five strategic landing centers along India's West Coast Exclusive Economic Zone (EEZ):
+
+| Landing Center | State | Coordinates | Primary Fleets | Dominant Target Species |
+| :--- | :--- | :---: | :--- | :--- |
+| **Malim Jetty / Panaji** | Goa | $15.5036^\circ\text{N}, 73.8286^\circ\text{E}$ | Mechanized Trawlers, Purse Seiners | Indian Mackerel, Oil Sardine, Pomfret |
+| **Mirkarwada / Ratnagiri** | Maharashtra | $16.9902^\circ\text{N}, 73.2847^\circ\text{E}$ | Mechanized Trawlers, Gillnetters | Pomfret, Mackerel, Tuna |
+| **Sasoon Docks / Colaba** | Maharashtra | $18.9167^\circ\text{N}, 72.8250^\circ\text{E}$ | Multi-day Deep-sea Trawlers | Yellowfin Tuna, Skipjack Tuna, Pomfret |
+| **Karwar / Baithkol** | Karnataka | $14.8055^\circ\text{N}, 74.1244^\circ\text{E}$ | Purse Seiners, Motorized Crafts | Indian Mackerel, Oil Sardine |
+| **Mangalore / Old Port** | Karnataka | $12.8580^\circ\text{N}, 74.8360^\circ\text{E}$ | Purse Seiners, Longliners, Trawlers | Tuna, Mackerel, Sardine |
+
+---
+
+## 3. Five Prioritized Pilot Species Profiles
+
+All five species are formally configured in `backend/app/agents/species_rules.py` with thermal preferences based on peer-reviewed CMFRI / FAO literature:
+
+| Species Common Name | Scientific Name | FAO Code | Optimal SST Range | Tolerable SST Range | Key Reference / Source |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Indian Mackerel** | *Rastrelliger kanagurta* | `RAK` | $27.0^\circ\text{C} - 29.5^\circ\text{C}$ | $25.0^\circ\text{C} - 31.0^\circ\text{C}$ | CMFRI Bulletin No. 24 / FAO FIGIS |
+| **Oil Sardine** | *Sardinella longiceps* | `IOS` | $26.5^\circ\text{C} - 29.0^\circ\text{C}$ | $24.5^\circ\text{C} - 30.5^\circ\text{C}$ | CMFRI Marine Fisheries Information Service |
+| **Skipjack Tuna** | *Katsuwonus pelamis* | `SKJ` | $24.0^\circ\text{C} - 28.5^\circ\text{C}$ | $20.0^\circ\text{C} - 30.0^\circ\text{C}$ | FAO Fisheries Synopsis No. 136 |
+| **Yellowfin Tuna** | *Thunnus albacares* | `YFT` | $22.0^\circ\text{C} - 28.0^\circ\text{C}$ | $18.0^\circ\text{C} - 30.0^\circ\text{C}$ | IOTC Scientific Committee Reports |
+| **Silver Pomfret** | *Pampus argenteus* | `POA` | $25.0^\circ\text{C} - 29.5^\circ\text{C}$ | $23.0^\circ\text{C} - 31.0^\circ\text{C}$ | CMFRI Special Publication No. 67 |
+
+---
+
+## 4. Scientific Safeguards & Leakage Prevention Matrix
+
+| Safeguard | Implemented Mechanism | Validation Outcome |
+| :--- | :--- | :---: |
+| **Duplicate Leakage** | SHA256 checksums, compound deduplication signatures (`source\|id\|lat\|lon\|time\|species`), idempotent re-imports. | **PASSED** (0 collisions across partitions) |
+| **Temporal Leakage** | `BenchmarkPartitionValidator` ensures training observations strictly pre-date evaluation observations. | **PASSED** (Temporal order strictly verified) |
+| **Observation Separation** | Separate schemas for commercial landing stats, research trawls, acoustic surveys, and PFZ bulletins. | **PASSED** (No method conflation) |
+| **Coordinate Disclaimers** | Landing port coordinates are never treated as precise offshore catch locations without offshore uncertainty flags. | **PASSED** (Spatial uncertainty enforced $\le 50\text{km}$) |
+| **Navigation Disclaimers** | Routes generated by RouteAgent explicitly disclaimed as geometric estimates, not certified navigational charts. | **PASSED** (Verified in frontend and browser tests) |
+| **Safety Qualifications** | Wave height alone never presented as vessel-safety clearance; craft operability vs maritime clearance separated. | **PASSED** (Verified in safety risk agent & UI) |
+
+---
+
+## 5. Pilot Readiness Summary
+
+ORCA is **`SOFTWARE_DEMO_READY`**:
+- The application stack, 5 specialist agents, and LangGraph orchestrator execute cleanly.
+- Real-time SSE streaming, interactive SVG map rendering, and evidence drawers function properly.
+- Data ingestion quality gates, dry-run rollbacks, and error recovery mechanisms are fully tested.
+
+ORCA remains **`AWAITING_AUTHORIZED_DATA`**:
+- The platform will become `DATA_INGESTION_VALIDATED` once the authorized CMFRI 2023–2025 CSV export is received, validated via dry-run, and ingested.
+- The platform will become `SCIENTIFICALLY_EVALUATED` only after independent evaluation against real ground-truth catch labels demonstrates predictive validity.

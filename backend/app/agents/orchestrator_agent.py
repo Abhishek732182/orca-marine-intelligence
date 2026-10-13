@@ -533,6 +533,17 @@ class OrchestratorAgent:
                     f"{fz_analysis.get('verified_fish_distribution', {}).get('statement') or 'Direct fish location, school density, chlorophyll-a, and catch probabilities are unavailable from meteorological models and cannot be inferred.'}"
                 ),
                 "scoring": fz_analysis.get("scoring"),
+                "environmental_suitability_scope": "ENVIRONMENTAL_AND_PHYSICAL_HABITAT_ONLY",
+                "environmental_suitability_distinction": (
+                    "CRITICAL NOTICE: Evaluated suitability represents environmental habitat conditions only (e.g. water temperature, chlorophyll-a). "
+                    "It does NOT indicate actual fish presence, catch probability, biomass volume, or validated predictive catch."
+                ),
+                "actual_fish_presence": "UNVERIFIED",
+                "catch_probability": None,
+                "biomass_prediction": None,
+                "predictive_accuracy": fz_analysis.get("biological_prediction", {}).get("predictive_accuracy") or "NOT_EVALUABLE",
+                "biological_evidence_status": fz_analysis.get("biological_prediction", {}).get("status", "UNVERIFIED"),
+                "biological_prediction": fz_analysis.get("biological_prediction"),
             },
             "evidence_classification": "DERIVED_ESTIMATE_AND_MATHEMATICAL_MODEL",
         }
@@ -541,16 +552,100 @@ class OrchestratorAgent:
         # 3. Evidence Sources & Provenance
         # ----------------------------------------------------------------------
         evidence_sources: list[dict[str, Any]] = []
-        if weather.get("data_source"):
-            evidence_sources.append({"agent": "Weather Agent", **weather["data_source"]})
-        if ocean.get("data_source"):
-            evidence_sources.append({"agent": "Ocean Agent", **ocean["data_source"]})
-        if fishing_zone.get("data_source"):
-            evidence_sources.append({"agent": "Fishing Zone Agent", **fishing_zone["data_source"]})
-        if route.get("data_source"):
-            evidence_sources.append({"agent": "Route Agent", **route["data_source"]})
-        if safety_risk.get("data_source"):
-            evidence_sources.append({"agent": "Safety/Risk Agent", **safety_risk["data_source"]})
+
+        def _compile_source_record(
+            agent_key: str,
+            agent_label: str,
+            resp: dict[str, Any],
+            default_limitations: str,
+        ) -> dict[str, Any] | None:
+            ds = resp.get("data_source")
+            if not ds and not resp:
+                return None
+            base = dict(ds) if isinstance(ds, dict) else {}
+            obs = resp.get("observations", {})
+            obs_time = (
+                obs.get("latest_observation_time")
+                or obs.get("observation_time")
+                or obs.get("earliest_observation_time")
+                or resp.get("generated_at")
+            )
+            retrieval_time = resp.get("generated_at") or datetime.now(timezone.utc).isoformat()
+
+            stale_flags = any("stale" in str(w).lower() for w in resp.get("warnings", []))
+            if stale_flags:
+                freshness_status = "stale"
+            elif resp.get("status") == "insufficient_evidence":
+                freshness_status = "insufficient_evidence"
+            elif resp.get("status") == "error":
+                freshness_status = "error"
+            else:
+                freshness_status = "fresh"
+
+            limitations = (
+                base.get("limitations")
+                or base.get("data_limitations")
+                or default_limitations
+            )
+
+            return {
+                "agent": agent_label,
+                **base,
+                "provenance": {
+                    "provider": base.get("provider") or base.get("providers_attempted") or "Open-Meteo",
+                    "coverage": base.get("coverage", "Regional marine model grid"),
+                    "endpoint": base.get("endpoint"),
+                },
+                "observation_time": obs_time,
+                "retrieval_time": retrieval_time,
+                "freshness_status": freshness_status,
+                "source_limitations": limitations,
+            }
+
+        w_src = _compile_source_record(
+            "weather",
+            "Weather Agent",
+            weather,
+            "Regional atmospheric model output; lacks micro-scale coastal gusts and in-situ anemometer observations.",
+        )
+        if w_src:
+            evidence_sources.append(w_src)
+
+        o_src = _compile_source_record(
+            "ocean",
+            "Ocean Agent",
+            ocean,
+            "Regional wave forecast grid (ECMWF/Meteo-France); does not account for shallow bathymetric shoaling or coastal surf.",
+        )
+        if o_src:
+            evidence_sources.append(o_src)
+
+        fz_src = _compile_source_record(
+            "fishing_zone",
+            "Fishing Zone Agent",
+            fishing_zone,
+            "Evaluates physical wave feasibility and thermal preferences only; lacks satellite ocean color (chlorophyll-a) and direct acoustic fish biomass.",
+        )
+        if fz_src:
+            evidence_sources.append(fz_src)
+
+        r_src = _compile_source_record(
+            "route",
+            "Route Agent",
+            route,
+            "Straight-line Great-Circle geodesic distance estimate only; does not verify hydrographic navigability, bathymetry, shoals, or traffic separation schemes.",
+        )
+        if r_src:
+            evidence_sources.append(r_src)
+
+        sr_src = _compile_source_record(
+            "safety_risk",
+            "Safety/Risk Agent",
+            safety_risk,
+            "Evaluates wave and wind thresholds against nominal craft limits; wave information alone is not vessel safety clearance.",
+        )
+        if sr_src:
+            evidence_sources.append(sr_src)
 
         timestamps: dict[str, Any] = {
             "orchestrated_at": datetime.now(timezone.utc).isoformat(),
@@ -655,6 +750,11 @@ class OrchestratorAgent:
             "preservation_guarantee": (
                 "Strict Safety Assurance: Critical hazard categories are never degraded. "
                 "Missing telemetry is strictly classified as unverified and never treated as calm."
+            ),
+            "wave_clearance_notice": (
+                "Wave height is a single sea-state parameter and does NOT constitute vessel safety clearance. "
+                "Small craft and commercial vessel safety requires evaluating wind velocity, wind gusts, "
+                "wave steepness, swell direction, tidal streams, currents, and vessel seaworthiness."
             ),
         }
 

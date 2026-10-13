@@ -29,6 +29,12 @@ import math
 from typing import Any
 import httpx
 
+from app.agents.biological_prediction_agent import (
+    BiologicalFeatureVector,
+    BiologicalModelInterface,
+    EnvironmentalEvidence,
+    analyze_environment,
+)
 from app.agents.sea_state_rules import classify_sea_state
 from app.agents.species_rules import (
     evaluate_thermal_suitability,
@@ -76,9 +82,86 @@ class FishingZoneAgent:
         self,
         provider: MarineDataProvider | OpenMeteoMarineProvider | None = None,
         fisheries_provider: Any | None = None,
+        biological_model: BiologicalModelInterface | None = None,
     ) -> None:
         self.provider = provider or OpenMeteoMarineProvider()
         self.fisheries_provider = fisheries_provider
+        self.biological_model = biological_model
+
+    def _evaluate_biological_evidence(
+        self,
+        wave_rec: EvidenceRecord | None = None,
+        sst_rec: EvidenceRecord | None = None,
+        chla_rec: EvidenceRecord | None = None,
+        now: datetime | None = None,
+        target_species: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate evidence completeness using biological prediction module without fabricating presence."""
+        now_dt = now or datetime.now(timezone.utc)
+        wave_val: float | None = None
+        if wave_rec and wave_rec.value is not None:
+            try:
+                v = float(wave_rec.value)
+                if 0 <= v <= 50:
+                    wave_val = v
+            except (ValueError, TypeError):
+                wave_val = None
+
+        sst_val: float | None = None
+        if sst_rec and sst_rec.value is not None:
+            try:
+                v = float(sst_rec.value)
+                if -5 <= v <= 50:
+                    sst_val = v
+            except (ValueError, TypeError):
+                sst_val = None
+
+        chla_val: float | None = None
+        if chla_rec and chla_rec.value is not None:
+            try:
+                v = float(chla_rec.value)
+                if 0 <= v <= 100:
+                    chla_val = v
+            except (ValueError, TypeError):
+                chla_val = None
+
+        try:
+            env_evidence = EnvironmentalEvidence(
+                wave_height_m=wave_val,
+                wave_observed_at=wave_rec.observed_at if wave_rec and wave_val is not None else None,
+                wave_source=wave_rec.source if wave_rec and wave_val is not None else None,
+                sea_surface_temperature_c=sst_val,
+                sst_observed_at=sst_rec.observed_at if sst_rec and sst_val is not None else None,
+                sst_source=sst_rec.source if sst_rec and sst_val is not None else None,
+                chlorophyll_a_mg_m3=chla_val,
+                chlorophyll_observed_at=chla_rec.observed_at if chla_rec and chla_val is not None else None,
+                chlorophyll_source=chla_rec.source if chla_rec and chla_val is not None else None,
+            )
+        except Exception:
+            env_evidence = EnvironmentalEvidence()
+
+        feature_vec: BiologicalFeatureVector | None = None
+        if self.biological_model is not None and target_species and latitude is not None and longitude is not None:
+            try:
+                feature_vec = BiologicalFeatureVector(
+                    species_code=target_species,
+                    latitude=latitude,
+                    longitude=longitude,
+                    observed_at=sst_rec.observed_at if sst_rec and sst_rec.observed_at else now_dt,
+                    sea_surface_temperature_c=sst_val,
+                    chlorophyll_a_mg_m3=chla_val,
+                )
+            except Exception:
+                feature_vec = None
+
+        return analyze_environment(
+            env_evidence,
+            model=self.biological_model,
+            feature_vector=feature_vec,
+            now=now_dt,
+        )
 
     async def analyze(self, request: FishingZoneAnalyzeRequest) -> FishingZoneAnalyzeResponse:
         """Analyze marine conditions, vessel feasibility, and fisheries suitability."""
@@ -122,6 +205,7 @@ class FishingZoneAgent:
                         "evidence_coverage_pct": 0.0,
                         "rationale": "Missing coordinates prevent querying environmental or fisheries telemetry.",
                     },
+                    "biological_prediction": self._evaluate_biological_evidence(),
                 },
                 warnings=["Missing latitude and longitude coordinates."],
                 error="Coordinates required for marine fisheries analysis.",
@@ -193,7 +277,10 @@ class FishingZoneAgent:
                     "rejected_records_reasons": [],
                 },
                 observations={},
-                analysis={"summary": f"Marine data provider connection failed: {str(exc)}"},
+                analysis={
+                    "summary": f"Marine data provider connection failed: {str(exc)}",
+                    "biological_prediction": self._evaluate_biological_evidence(),
+                },
                 warnings=["Upstream marine provider error."],
                 error=f"Marine provider error: {str(exc)}",
             )
@@ -210,7 +297,10 @@ class FishingZoneAgent:
                     "rejected_records_reasons": [],
                 },
                 observations={},
-                analysis={"summary": f"Validation error: {str(exc)}"},
+                analysis={
+                    "summary": f"Validation error: {str(exc)}",
+                    "biological_prediction": self._evaluate_biological_evidence(),
+                },
                 warnings=[str(exc)],
                 error=str(exc),
             )
@@ -227,7 +317,10 @@ class FishingZoneAgent:
                     "rejected_records_reasons": [],
                 },
                 observations={},
-                analysis={"summary": f"Provider extraction failed: {str(exc)}"},
+                analysis={
+                    "summary": f"Provider extraction failed: {str(exc)}",
+                    "biological_prediction": self._evaluate_biological_evidence(),
+                },
                 warnings=[f"Provider error: {str(exc)}"],
                 error=f"Unexpected provider error: {str(exc)}",
             )
@@ -270,6 +363,7 @@ class FishingZoneAgent:
                         "evidence_coverage_pct": 0.0,
                         "rationale": "No marine numerical grid cells found at coordinates; inland or unnavigable.",
                     },
+                    "biological_prediction": self._evaluate_biological_evidence(),
                 },
                 warnings=[
                     "No marine data points returned by provider.",
@@ -531,6 +625,12 @@ class FishingZoneAgent:
                         "evidence_coverage_pct": 0.0,
                         "rationale": "Missing valid fresh wave measurements.",
                     },
+                    "biological_prediction": self._evaluate_biological_evidence(
+                        wave_rec=all_wave_records[-1] if all_wave_records else None,
+                        sst_rec=all_sst_records[-1] if all_sst_records else None,
+                        chla_rec=all_chla_records[-1] if all_chla_records else None,
+                        now=now_utc,
+                    ),
                 },
                 warnings=["Null wave height records."],
                 error="Null wave height records returned by provider.",
@@ -946,7 +1046,12 @@ class FishingZoneAgent:
                 "status": verified_dist_status,
                 "biomass_data_available": has_verified_fisheries_evidence and observed_biomass is not None,
                 "catch_probability": None,  # Strictly NEVER fabricated
+                "biomass_prediction": None,  # Strictly NEVER fabricated or predicted
                 "statement": verified_dist_statement,
+                "environmental_suitability_distinction": (
+                    "Environmental habitat suitability reflects physical and oceanographic parameters only. "
+                    "It does NOT indicate actual fish presence, catch probability, biomass density, or validated prediction."
+                ),
             },
             "scoring": {
                 "suitability_score": suitability_score,
@@ -974,6 +1079,15 @@ class FishingZoneAgent:
                 "ORCA does not invent or simulate unverified fish coordinates. "
                 "Official Potential Fishing Zone (PFZ) advisories require multi-spectral satellite "
                 "thermal infrared (SST) and ocean color chlorophyll sensors (e.g. INCOIS/NOAA)."
+            ),
+            "biological_prediction": self._evaluate_biological_evidence(
+                wave_rec=latest_wave_rec or (all_wave_records[-1] if all_wave_records else None),
+                sst_rec=latest_sst_rec or (all_sst_records[-1] if all_sst_records else None),
+                chla_rec=latest_chla_rec or (all_chla_records[-1] if all_chla_records else None),
+                now=now_utc,
+                target_species=target_species_raw,
+                latitude=lat,
+                longitude=lon,
             ),
         }
 

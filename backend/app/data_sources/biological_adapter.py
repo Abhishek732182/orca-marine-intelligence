@@ -1,6 +1,6 @@
 """Adapter interface and data quality gates for verified biological fisheries observations.
 
-ORCA Fisheries Intelligence v2.4: Official Fisheries Data Acquisition Planning.
+ORCA Fisheries Intelligence v2.8.1: Pre-submission Readiness Fix.
 
 Design Guarantees:
 1. Strict Separation: Clearly distinguishes historical landing statistics, research vessel
@@ -14,6 +14,10 @@ Design Guarantees:
    - Missing value quarantine.
 3. No False Integration Claims: Without verified institutional access tokens/keys, records
    cannot claim live authorized status. Fixtures and unverified samples are strictly quarantined.
+   IMPORTANT (v2.8.1): A CSV record that self-declares `is_authorized=true` cannot authorize
+   its own import. An independently verifiable non-empty `access_authorization_token` is
+   required. Records lacking such a token are explicitly rejected with
+   `self_declared_authorization_no_external_token` regardless of the flag value.
 4. Preserves Evidence Schema: Normalizes valid biological records directly into ORCA's standard
    EvidenceRecord schema without modifying external API contracts.
 """
@@ -122,10 +126,8 @@ class BiologicalDataQualityGate:
 
         # 2. Species Taxonomic Identification Gate
         species_lookup = lookup_species(record.species_raw_name)
-        if species_lookup.get("status") != "SUPPORTED":
-            # Attempt scientific name lookup if available
-            if record.scientific_name:
-                species_lookup = lookup_species(record.scientific_name)
+        if species_lookup.get("status") != "SUPPORTED" and record.scientific_name:
+            species_lookup = lookup_species(record.scientific_name)
 
         if species_lookup.get("status") != "SUPPORTED":
             reasons.append(f"unsupported_or_unverified_species: {record.species_raw_name}")
@@ -200,10 +202,25 @@ class BiologicalDataQualityGate:
                 reasons.append("invalid_or_missing_acoustic_biomass_density")
 
         # 6. Authorization Gate
+        # A record that self-declares is_authorized_official_feed=True via an in-band CSV
+        # field cannot bootstrap its own authorization. An independently verifiable
+        # access_authorization_token (issued out-of-band by the data custodian) MUST be
+        # present. Without it the declaration is treated as an unauthorized self-assertion.
         if not record.is_authorized_official_feed:
             diagnostics["authorization"] = "UNAUTHORIZED_OR_FIXTURE"
         else:
-            diagnostics["authorization"] = "AUTHORIZED_OFFICIAL_FEED"
+            token = (record.access_authorization_token or "").strip()
+            if not token:
+                reasons.append("self_declared_authorization_no_external_token")
+                diagnostics["authorization"] = "SELF_DECLARED_NO_EXTERNAL_TOKEN"
+                logger.warning(
+                    "BiologicalDataQualityGate: Record %s claims is_authorized=True "
+                    "but supplies no external access_authorization_token. "
+                    "Self-declared authorization is rejected to prevent bypass.",
+                    record.record_identifier,
+                )
+            else:
+                diagnostics["authorization"] = "AUTHORIZED_OFFICIAL_FEED"
 
         is_valid = len(reasons) == 0
         return is_valid, reasons, diagnostics
@@ -300,7 +317,7 @@ class AuthorizedFisheriesAdapter(MarineDataProvider):
             metadata=meta,
         )
 
-        if commit:
+        if commit and ev_rec.status == "valid":
             self._normalized_records.append(ev_rec)
         return ev_rec, []
 
@@ -315,7 +332,7 @@ class AuthorizedFisheriesAdapter(MarineDataProvider):
         # Returns normalized authorized records in vicinity
         matching = []
         for r in self._normalized_records:
-            if r.latitude is not None and r.longitude is not None:
+            if r.status == "valid" and r.latitude is not None and r.longitude is not None:
                 # Direct match or within coordinate tolerance
                 if abs(r.latitude - latitude) <= 0.5 and abs(r.longitude - longitude) <= 0.5:
                     matching.append(r)
