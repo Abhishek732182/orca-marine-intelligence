@@ -29,7 +29,6 @@ import io
 import logging
 import math
 from pathlib import Path
-import threading
 from typing import Any, Sequence, TextIO
 
 from pydantic import BaseModel, Field
@@ -69,7 +68,6 @@ COLUMN_ALIASES: dict[str, list[str]] = {
     "observation_method": ["observation_method", "method", "sampling_protocol", "observation_type"],
     "species_name": ["species_name", "species_raw_name", "species", "common_name"],
     "scientific_name": ["scientific_name", "scientificname", "taxon"],
-    "fao_alpha3_code": ["fao_alpha3_code", "fao_code", "alpha3_code", "species_code", "fao_alpha_3_code"],
     "latitude": ["latitude", "lat", "decimallatitude"],
     "longitude": ["longitude", "lon", "long", "decimallongitude"],
     "spatial_uncertainty_km": ["spatial_uncertainty_km", "uncertainty_km", "spatial_uncertainty"],
@@ -97,7 +95,7 @@ def _resolve_header_mapping(headers: Sequence[str]) -> tuple[dict[str, str], lis
     Returns:
         (canonical_to_csv_header_dict, missing_required_canonical_columns)
     """
-    clean_headers = {h.strip().lstrip("\ufeff").lower(): h for h in headers if h and h.strip()}
+    clean_headers = {h.strip().lower(): h for h in headers if h and h.strip()}
     mapping: dict[str, str] = {}
 
     for canonical, aliases in COLUMN_ALIASES.items():
@@ -165,7 +163,6 @@ class GroundTruthCsvImporter:
             max_spatial_uncertainty_km=max_spatial_uncertainty_km
         )
         self.imported_file_checksums: set[str] = set()
-        self._import_lock = threading.Lock()
 
     def import_csv(
         self,
@@ -177,27 +174,16 @@ class GroundTruthCsvImporter:
     ) -> GroundTruthImportSummary:
         """Parse, validate, and optionally import ground-truth CSV observations.
 
-        Concurrency constraint:
-            Concurrent imports on a shared GroundTruthCsvImporter instance are
-            strictly serialized via an internal lock to protect adapter state,
-            deduplication signatures, and operational stores against race conditions.
-        """
-        with self._import_lock:
-            return self._import_csv_locked(
-                csv_source=csv_source,
-                is_dry_run=is_dry_run,
-                now=now,
-                data_version=data_version,
-            )
+        Args:
+            csv_source: Raw CSV string, file-like text buffer, or file path.
+            is_dry_run: If True, executes full validation and diagnostics without
+                        committing records to operational storage.
+            now: Reference evaluation timestamp (timezone-aware UTC).
+            data_version: Version tag of the imported dataset.
 
-    def _import_csv_locked(
-        self,
-        csv_source: str | TextIO | Path,
-        *,
-        is_dry_run: bool = True,
-        now: datetime | None = None,
-        data_version: str = "v2.5-draft",
-    ) -> GroundTruthImportSummary:
+        Returns:
+            GroundTruthImportSummary containing counts, reason codes, and diagnostics.
+        """
         ref_time = now or datetime.now(timezone.utc)
         if ref_time.tzinfo is None:
             ref_time = ref_time.replace(tzinfo=timezone.utc)
@@ -288,9 +274,6 @@ class GroundTruthCsvImporter:
             )
 
         initial_signatures = set(self.adapter.quality_gate.seen_signatures)
-        initial_checksums = set(self.imported_file_checksums)
-        initial_records_count = len(self.adapter._normalized_records)
-        accepted_signatures: set[str] = set()
 
         total_rows = 0
         accepted_rows = 0
@@ -302,225 +285,202 @@ class GroundTruthCsvImporter:
         detected_agency: str | None = None
         has_authorized_rows = False
 
-        try:
-            for row_idx, row in enumerate(reader, start=1):
-                total_rows += 1
-                reasons: list[str] = []
+        for row_idx, row in enumerate(reader, start=1):
+            total_rows += 1
+            reasons: list[str] = []
 
-                def get_val(canonical_key: str) -> str | None:
-                    header_name = header_map.get(canonical_key)
-                    if not header_name:
-                        return None
-                    val = row.get(header_name)
-                    return val.strip() if val is not None else None
+            def get_val(canonical_key: str) -> str | None:
+                header_name = header_map.get(canonical_key)
+                if not header_name:
+                    return None
+                val = row.get(header_name)
+                return val.strip() if val is not None else None
 
-                # A. Extract fields
-                rec_id = get_val("record_identifier")
-                source_agency = get_val("source_agency")
-                dataset_id = get_val("dataset_identifier")
-                method_str = get_val("observation_method")
-                species_raw = get_val("species_name")
-                sci_name = get_val("scientific_name")
-                fao_code = get_val("fao_alpha3_code")
-                lat_str = get_val("latitude")
-                lon_str = get_val("longitude")
-                uncertainty_str = get_val("spatial_uncertainty_km")
-                landing_center = get_val("landing_center_name")
-                obs_at_str = get_val("observed_at")
-                voyage_start_str = get_val("voyage_start_at")
-                voyage_end_str = get_val("voyage_end_at")
-                catch_val_str = get_val("catch_weight")
-                catch_unit_str = get_val("catch_unit")
-                effort_val_str = get_val("effort_value")
-                effort_unit_str = get_val("effort_unit")
-                gear_type = get_val("gear_type")
-                is_auth_str = get_val("is_authorized")
-                auth_token = get_val("access_authorization_token")
+            # A. Extract fields
+            rec_id = get_val("record_identifier")
+            source_agency = get_val("source_agency")
+            dataset_id = get_val("dataset_identifier")
+            method_str = get_val("observation_method")
+            species_raw = get_val("species_name")
+            sci_name = get_val("scientific_name")
+            lat_str = get_val("latitude")
+            lon_str = get_val("longitude")
+            uncertainty_str = get_val("spatial_uncertainty_km")
+            landing_center = get_val("landing_center_name")
+            obs_at_str = get_val("observed_at")
+            voyage_start_str = get_val("voyage_start_at")
+            voyage_end_str = get_val("voyage_end_at")
+            catch_val_str = get_val("catch_weight")
+            catch_unit_str = get_val("catch_unit")
+            effort_val_str = get_val("effort_value")
+            effort_unit_str = get_val("effort_unit")
+            gear_type = get_val("gear_type")
+            is_auth_str = get_val("is_authorized")
+            auth_token = get_val("access_authorization_token")
 
-                if source_agency and not detected_agency:
-                    detected_agency = source_agency
+            if source_agency and not detected_agency:
+                detected_agency = source_agency
 
-                # B. Validate record identifier & agency
-                if not rec_id:
-                    reasons.append("missing_record_identifier")
-                if not source_agency:
-                    reasons.append("missing_source_agency")
-                if not dataset_id:
-                    reasons.append("missing_dataset_identifier")
+            # B. Validate record identifier & agency
+            if not rec_id:
+                reasons.append("missing_record_identifier")
+            if not source_agency:
+                reasons.append("missing_source_agency")
+            if not dataset_id:
+                reasons.append("missing_dataset_identifier")
 
-                # C. Validate observation method
-                obs_method: BiologicalObservationMethod | None = None
-                if not method_str:
-                    reasons.append("missing_observation_method")
-                else:
-                    try:
-                        obs_method = BiologicalObservationMethod(method_str.strip().upper())
-                    except ValueError:
-                        reasons.append(f"invalid_observation_method: {method_str}")
-
-                # D. Validate coordinates & numerical sanity
-                lat: float | None = None
-                lon: float | None = None
-                if lat_str is None or lon_str is None:
-                    reasons.append("missing_coordinates")
-                else:
-                    try:
-                        lat = float(lat_str)
-                        lon = float(lon_str)
-                        if math.isnan(lat) or math.isinf(lat) or math.isnan(lon) or math.isinf(lon):
-                            reasons.append("coordinates_nan_or_infinite")
-                        elif not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
-                            reasons.append(f"coordinates_out_of_bounds: ({lat}, {lon})")
-                    except ValueError:
-                        reasons.append(f"unparseable_coordinates: lat={lat_str}, lon={lon_str}")
-
-                spatial_uncertainty = 5.0
-                if uncertainty_str:
-                    try:
-                        spatial_uncertainty = float(uncertainty_str)
-                        if math.isnan(spatial_uncertainty) or math.isinf(spatial_uncertainty):
-                            reasons.append("spatial_uncertainty_nan_or_infinite")
-                        elif spatial_uncertainty < 0.0:
-                            reasons.append("negative_spatial_uncertainty")
-                    except ValueError:
-                        reasons.append(f"unparseable_spatial_uncertainty: {uncertainty_str}")
-
-                # E. Validate timestamps
-                observed_at: datetime | None = None
-                if not obs_at_str:
-                    reasons.append("missing_observed_at_timestamp")
-                else:
-                    try:
-                        dt = datetime.fromisoformat(obs_at_str.replace("Z", "+00:00"))
-                        if dt.tzinfo is None:
-                            dt = dt.replace(tzinfo=timezone.utc)
-                        observed_at = dt
-                    except Exception:
-                        reasons.append(f"invalid_timestamp_format: {obs_at_str}")
-
-                voyage_start: datetime | None = None
-                if voyage_start_str:
-                    try:
-                        dt = datetime.fromisoformat(voyage_start_str.replace("Z", "+00:00"))
-                        voyage_start = dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
-                    except Exception:
-                        reasons.append(f"invalid_voyage_start_format: {voyage_start_str}")
-
-                voyage_end: datetime | None = None
-                if voyage_end_str:
-                    try:
-                        dt = datetime.fromisoformat(voyage_end_str.replace("Z", "+00:00"))
-                        voyage_end = dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
-                    except Exception:
-                        reasons.append(f"invalid_voyage_end_format: {voyage_end_str}")
-
-                # F. Validate Catch & Effort Units & numerical sanity
-                catch_kg: float | None = None
-                if catch_val_str is not None and catch_val_str != "":
-                    if not catch_unit_str or catch_unit_str.strip().lower() not in VALID_CATCH_UNITS:
-                        reasons.append(f"incompatible_catch_units: {catch_unit_str}")
-                    try:
-                        catch_kg = float(catch_val_str)
-                        if math.isnan(catch_kg) or math.isinf(catch_kg):
-                            reasons.append("catch_weight_nan_or_infinite")
-                        elif catch_kg < 0.0:
-                            reasons.append("negative_catch_weight")
-                    except ValueError:
-                        reasons.append(f"unparseable_catch_weight: {catch_val_str}")
-
-                effort_hours: float | None = None
-                if effort_val_str is not None and effort_val_str != "":
-                    if not effort_unit_str or effort_unit_str.strip().lower() not in VALID_EFFORT_HOURLY_UNITS:
-                        reasons.append(f"incompatible_effort_units: {effort_unit_str}")
-                    try:
-                        effort_hours = float(effort_val_str)
-                        if math.isnan(effort_hours) or math.isinf(effort_hours):
-                            reasons.append("effort_hours_nan_or_infinite")
-                        elif effort_hours <= 0.0:
-                            reasons.append("non_positive_effort_hours")
-                    except ValueError:
-                        reasons.append(f"unparseable_effort_value: {effort_val_str}")
-
-                # G. Authorization flag
-                is_auth = False
-                if is_auth_str:
-                    is_auth = is_auth_str.strip().lower() in {"true", "1", "yes", "authorized"}
-
-                # If basic row syntax failed, register rejection
-                if reasons or obs_method is None or observed_at is None or lat is None or lon is None or not rec_id or not source_agency or not dataset_id or not species_raw:
-                    rejected_rows += 1
-                    row_reasons[row_idx] = reasons
-                    all_reasons.extend(reasons)
-                    continue
-
-                # H. Delegate to AuthorizedFisheriesAdapter quality gate
-                raw_rec = RawBiologicalFisheriesRecord(
-                    source_agency=source_agency,
-                    dataset_identifier=dataset_id,
-                    record_identifier=rec_id,
-                    observation_method=obs_method,
-                    species_raw_name=species_raw,
-                    scientific_name=sci_name,
-                    fao_alpha3_code=fao_code,
-                    latitude=lat,
-                    longitude=lon,
-                    spatial_uncertainty_km=spatial_uncertainty,
-                    landing_center_name=landing_center,
-                    observed_at=observed_at,
-                    voyage_start_at=voyage_start,
-                    voyage_end_at=voyage_end,
-                    catch_weight_kg=catch_kg,
-                    effort_hours=effort_hours,
-                    gear_type=gear_type,
-                    is_authorized_official_feed=is_auth,
-                    access_authorization_token=auth_token,
-                    metadata={"csv_row_number": row_idx, "source_file_sha256": file_sha256},
-                )
-
-                ev_rec, gate_issues = self.adapter.normalize_record(
-                    raw_rec,
-                    now=ref_time,
-                    commit=False,
-                )
-
-                if gate_issues:
-                    rejected_rows += 1
-                    row_reasons[row_idx] = gate_issues
-                    all_reasons.extend(gate_issues)
-                elif ev_rec is not None:
-                    if ev_rec.status == "valid":
-                        accepted_rows += 1
-                        # Track if any authorized rows were successfully imported
-                        if is_auth:
-                            has_authorized_rows = True
-                        sig = self.adapter.quality_gate.generate_deduplication_signature(raw_rec)
-                        accepted_signatures.add(sig)
-                        if not is_dry_run:
-                            imported_records.append(ev_rec)
-                    else:
-                        # e.g. status == "invalid" due to unauthorized feed
-                        quarantined_rows += 1
-                        row_reasons[row_idx] = ["unauthorized_or_unverified_feed"]
-                        all_reasons.append("unauthorized_or_unverified_feed")
-
-            summary_counter = Counter(all_reasons)
-
-            # Restore seen_signatures if dry run or if no rows were accepted
-            if is_dry_run or accepted_rows == 0:
-                self.adapter.quality_gate.seen_signatures = initial_signatures
+            # C. Validate observation method
+            obs_method: BiologicalObservationMethod | None = None
+            if not method_str:
+                reasons.append("missing_observation_method")
             else:
-                # Atomic commit to operational store only after entire batch passes validation
-                self.adapter._normalized_records.extend(imported_records)
-                self.imported_file_checksums.add(file_sha256)
-                self.adapter.quality_gate.seen_signatures = initial_signatures | accepted_signatures
+                try:
+                    obs_method = BiologicalObservationMethod(method_str.strip().upper())
+                except ValueError:
+                    reasons.append(f"invalid_observation_method: {method_str}")
 
-        except Exception as exc:
-            # Transaction rollback on unexpected failure: restore all mutable state to pre-import snapshot
+            # D. Validate coordinates & numerical sanity
+            lat: float | None = None
+            lon: float | None = None
+            if lat_str is None or lon_str is None:
+                reasons.append("missing_coordinates")
+            else:
+                try:
+                    lat = float(lat_str)
+                    lon = float(lon_str)
+                    if math.isnan(lat) or math.isinf(lat) or math.isnan(lon) or math.isinf(lon):
+                        reasons.append("coordinates_nan_or_infinite")
+                    elif not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+                        reasons.append(f"coordinates_out_of_bounds: ({lat}, {lon})")
+                except ValueError:
+                    reasons.append(f"unparseable_coordinates: lat={lat_str}, lon={lon_str}")
+
+            spatial_uncertainty = 5.0
+            if uncertainty_str:
+                try:
+                    spatial_uncertainty = float(uncertainty_str)
+                    if math.isnan(spatial_uncertainty) or math.isinf(spatial_uncertainty):
+                        reasons.append("spatial_uncertainty_nan_or_infinite")
+                except ValueError:
+                    reasons.append(f"unparseable_spatial_uncertainty: {uncertainty_str}")
+
+            # E. Validate timestamps
+            observed_at: datetime | None = None
+            if not obs_at_str:
+                reasons.append("missing_observed_at_timestamp")
+            else:
+                try:
+                    dt = datetime.fromisoformat(obs_at_str.replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    observed_at = dt
+                except Exception:
+                    reasons.append(f"invalid_timestamp_format: {obs_at_str}")
+
+            voyage_start: datetime | None = None
+            if voyage_start_str:
+                try:
+                    dt = datetime.fromisoformat(voyage_start_str.replace("Z", "+00:00"))
+                    voyage_start = dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+                except Exception:
+                    reasons.append(f"invalid_voyage_start_format: {voyage_start_str}")
+
+            voyage_end: datetime | None = None
+            if voyage_end_str:
+                try:
+                    dt = datetime.fromisoformat(voyage_end_str.replace("Z", "+00:00"))
+                    voyage_end = dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+                except Exception:
+                    reasons.append(f"invalid_voyage_end_format: {voyage_end_str}")
+
+            # F. Validate Catch & Effort Units & numerical sanity
+            catch_kg: float | None = None
+            if catch_val_str is not None and catch_val_str != "":
+                if not catch_unit_str or catch_unit_str.strip().lower() not in VALID_CATCH_UNITS:
+                    reasons.append(f"incompatible_catch_units: {catch_unit_str}")
+                try:
+                    catch_kg = float(catch_val_str)
+                    if math.isnan(catch_kg) or math.isinf(catch_kg):
+                        reasons.append("catch_weight_nan_or_infinite")
+                except ValueError:
+                    reasons.append(f"unparseable_catch_weight: {catch_val_str}")
+
+            effort_hours: float | None = None
+            if effort_val_str is not None and effort_val_str != "":
+                if not effort_unit_str or effort_unit_str.strip().lower() not in VALID_EFFORT_HOURLY_UNITS:
+                    reasons.append(f"incompatible_effort_units: {effort_unit_str}")
+                try:
+                    effort_hours = float(effort_val_str)
+                    if math.isnan(effort_hours) or math.isinf(effort_hours):
+                        reasons.append("effort_hours_nan_or_infinite")
+                except ValueError:
+                    reasons.append(f"unparseable_effort_value: {effort_val_str}")
+
+            # G. Authorization flag
+            is_auth = False
+            if is_auth_str:
+                is_auth = is_auth_str.strip().lower() in {"true", "1", "yes", "authorized"}
+            if is_auth:
+                has_authorized_rows = True
+
+            # If basic row syntax failed, register rejection
+            if reasons or obs_method is None or observed_at is None or lat is None or lon is None or not rec_id or not source_agency or not dataset_id or not species_raw:
+                rejected_rows += 1
+                row_reasons[row_idx] = reasons
+                all_reasons.extend(reasons)
+                continue
+
+            # H. Delegate to AuthorizedFisheriesAdapter quality gate
+            raw_rec = RawBiologicalFisheriesRecord(
+                source_agency=source_agency,
+                dataset_identifier=dataset_id,
+                record_identifier=rec_id,
+                observation_method=obs_method,
+                species_raw_name=species_raw,
+                scientific_name=sci_name,
+                latitude=lat,
+                longitude=lon,
+                spatial_uncertainty_km=spatial_uncertainty,
+                landing_center_name=landing_center,
+                observed_at=observed_at,
+                voyage_start_at=voyage_start,
+                voyage_end_at=voyage_end,
+                catch_weight_kg=catch_kg,
+                effort_hours=effort_hours,
+                gear_type=gear_type,
+                is_authorized_official_feed=is_auth,
+                access_authorization_token=auth_token,
+                metadata={"csv_row_number": row_idx, "source_file_sha256": file_sha256},
+            )
+
+            ev_rec, gate_issues = self.adapter.normalize_record(
+                raw_rec,
+                now=ref_time,
+                commit=(not is_dry_run),
+            )
+
+            if gate_issues:
+                rejected_rows += 1
+                row_reasons[row_idx] = gate_issues
+                all_reasons.extend(gate_issues)
+            elif ev_rec is not None:
+                if ev_rec.status == "valid":
+                    accepted_rows += 1
+                    if not is_dry_run:
+                        imported_records.append(ev_rec)
+                else:
+                    # e.g. status == "invalid" due to unauthorized feed
+                    quarantined_rows += 1
+                    row_reasons[row_idx] = ["unauthorized_or_unverified_feed"]
+                    all_reasons.append("unauthorized_or_unverified_feed")
+
+        summary_counter = Counter(all_reasons)
+
+        # Restore seen_signatures if dry run so subsequent actual import is not blocked
+        if is_dry_run:
             self.adapter.quality_gate.seen_signatures = initial_signatures
-            self.imported_file_checksums = initial_checksums
-            self.adapter._normalized_records = self.adapter._normalized_records[:initial_records_count]
-            logger.error("Ground truth import transaction aborted due to exception: %s", exc)
-            raise
+        elif accepted_rows > 0:
+            self.imported_file_checksums.add(file_sha256)
 
         store_after = len(self.adapter._normalized_records)
 
@@ -530,7 +490,7 @@ class GroundTruthCsvImporter:
             rejected_rows=rejected_rows,
             quarantined_rows=quarantined_rows,
             is_dry_run=is_dry_run,
-            is_authorized_dataset=has_authorized_rows,
+            is_authorized_dataset=has_authorized_rows and (accepted_rows > 0),
             data_version=data_version,
             source_agency=detected_agency,
             missing_required_headers=[],

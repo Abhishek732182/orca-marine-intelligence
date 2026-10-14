@@ -1,0 +1,848 @@
+/* ==========================================================================
+   ORCA Marine Intelligence — Authentication UI Styles (auth.css)
+   Consistent Marine Ecosystem & Ocean Science Visual Theme
+   ========================================================================== */
+
+/* Page Wrapper */
+.auth-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--orca-bg-page);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
+    linear-gradient(to bottom, #f8fafc 0%, #edf4f9 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Subtle Nautical Wave Contour Background Overlay */
+.auth-page-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 380px;
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Top Global Navigation Bar for Authentication State */
+.auth-topbar {
+  position: relative;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: 1px solid var(--orca-border-subtle);
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-xs);
+}
+
+.auth-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.auth-logo-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--orca-navy-900) 0%, var(--orca-navy-700) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(10, 25, 47, 0.2);
+  color: #38bdf8;
+  font-size: 1.25rem;
+  font-weight: 800;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.auth-topbar-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--orca-navy-950);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.auth-topbar-subtitle {
+  font-size: 0.75rem;
+  color: var(--orca-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.auth-nav-toggle-group {
+  display: flex;
+  align-items: center;
+  background: var(--orca-bg-subtle);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--orca-border-subtle);
+  gap: 4px;
+}
+
+.auth-nav-toggle-btn {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--orca-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-nav-toggle-btn:hover {
+  color: var(--orca-teal-600);
+}
+
+.auth-nav-toggle-btn.active {
+  background: #ffffff;
+  color: var(--orca-teal-600);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Main Container Layout */
+.auth-main-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.auth-card-split {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  background: var(--orca-bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--orca-border-subtle);
+  overflow: hidden;
+  min-height: 640px;
+}
+
+/* Left Brand & Scientific Mission Showcase */
+.auth-branding-panel {
+  flex: 1.05;
+  background: linear-gradient(155deg, #071527 0%, #0c233f 45%, #081d33 100%);
+  color: #ffffff;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-branding-panel::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-branding-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: -40px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.branding-content {
+  position: relative;
+  z-index: 2;
+}
+
+.branding-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(14, 165, 233, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.branding-tagline-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.branding-title {
+  font-size: 2.1rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.branding-title span {
+  background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.branding-description {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  margin-bottom: 2rem;
+}
+
+/* Collaborative Agent Architecture Cards */
+.branding-agents-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.agent-mini-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.agent-mini-badge:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(56, 189, 248, 0.3);
+  transform: translateX(4px);
+}
+
+.agent-mini-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: rgba(14, 165, 233, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.agent-mini-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-mini-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.agent-mini-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* Scientific Telemetry Footer */
+.branding-telemetry-footer {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-family: var(--font-telemetry);
+}
+
+.telemetry-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #38bdf8;
+}
+
+.telemetry-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orca-success);
+}
+
+/* Right Form Section */
+.auth-form-panel {
+  flex: 1.15;
+  padding: 3rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.auth-form-header {
+  margin-bottom: 2rem;
+}
+
+.auth-form-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--orca-teal-600);
+  background: var(--orca-cyan-light);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.5rem;
+}
+
+.auth-form-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--orca-navy-950);
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+}
+
+.auth-form-subtitle {
+  font-size: 0.88rem;
+  color: var(--orca-text-secondary);
+  line-height: 1.5;
+}
+
+/* Form Layout */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Input Component Styles */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--orca-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-label .required-star {
+  color: var(--orca-error);
+}
+
+.form-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.form-input-icon {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--orca-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-left: 2.6rem;
+  padding-right: 2.6rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--orca-text-primary);
+  background: #ffffff;
+  border: 1px solid var(--orca-border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.form-input:placeholder-shown {
+  background-color: #ffffff;
+}
+
+.form-input:focus {
+  border-color: var(--orca-teal-500);
+  box-shadow: var(--shadow-focus);
+}
+
+.form-input.is-error {
+  border-color: var(--orca-error);
+  background-color: #fffbfa;
+}
+
+.form-input.is-error:focus {
+  border-color: var(--orca-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.form-input.is-valid {
+  border-color: var(--orca-success);
+}
+
+.input-action-btn {
+  position: absolute;
+  right: 0.8rem;
+  background: none;
+  border: none;
+  color: var(--orca-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.input-action-btn:hover {
+  color: var(--orca-navy-950);
+}
+
+/* Error and Hint Messages */
+.form-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--orca-error);
+  font-weight: 500;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.form-hint-msg {
+  font-size: 0.75rem;
+  color: var(--orca-text-muted);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Password Strength Meter */
+.password-strength-container {
+  margin-top: 0.4rem;
+  background: var(--orca-bg-subtle);
+  border: 1px solid var(--orca-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+}
+
+.strength-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  margin-bottom: 0.5rem;
+}
+
+.strength-label {
+  color: var(--orca-text-muted);
+  font-weight: 500;
+}
+
+.strength-score-text {
+  font-weight: 700;
+  font-family: var(--font-telemetry);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.strength-score-text.weak { color: var(--orca-error); }
+.strength-score-text.fair { color: var(--orca-warning); }
+.strength-score-text.good { color: var(--orca-teal-600); }
+.strength-score-text.strong { color: var(--orca-success); }
+
+.strength-meter-bar {
+  display: flex;
+  gap: 4px;
+  height: 5px;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.strength-bar-segment {
+  flex: 1;
+  height: 100%;
+  background: #cbd5e1;
+  border-radius: 3px;
+  transition: background var(--transition-normal);
+}
+
+.strength-bar-segment.filled-weak { background: var(--orca-error); }
+.strength-bar-segment.filled-fair { background: var(--orca-warning); }
+.strength-bar-segment.filled-good { background: var(--orca-teal-500); }
+.strength-bar-segment.filled-strong { background: var(--orca-success); }
+
+/* Password Requirements Checklist */
+.strength-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+}
+
+.requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--orca-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.requirement-item.met {
+  color: var(--orca-success-text);
+  font-weight: 600;
+}
+
+.req-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.requirement-item.met .req-icon {
+  background: var(--orca-success);
+  color: #ffffff;
+}
+
+.requirement-item:not(.met) .req-icon {
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Primary Button Component */
+.orca-btn-primary {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  background: linear-gradient(135deg, var(--orca-teal-600) 0%, #0369a1 100%);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+}
+
+.orca-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+.orca-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.orca-btn-primary:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Spinner */
+.orca-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: orca-spin 0.8s linear infinite;
+}
+
+@keyframes orca-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success & Notice Alerts */
+.auth-alert-box {
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  animation: fadeIn 0.25s ease-out;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.auth-alert-box.success {
+  background: var(--orca-success-bg);
+  border: 1px solid var(--orca-success-border);
+  color: var(--orca-success-text);
+}
+
+.auth-alert-box.error {
+  background: var(--orca-error-bg);
+  border: 1px solid var(--orca-error-border);
+  color: var(--orca-error-text);
+}
+
+.auth-alert-box.info {
+  background: var(--orca-info-bg);
+  border: 1px solid var(--orca-info-border);
+  color: var(--orca-info-text);
+}
+
+.alert-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alert-content strong {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.alert-subtext {
+  font-size: 0.78rem;
+  opacity: 0.9;
+  margin-top: 4px;
+}
+
+/* Switcher / Navigation Footer */
+.auth-switch-footer {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--orca-border-subtle);
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--orca-text-secondary);
+}
+
+.auth-switch-link {
+  color: var(--orca-teal-600);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.auth-switch-link:hover {
+  color: #0369a1;
+}
+
+/* Backend Scope Disclaimer Banner */
+.auth-scope-disclaimer {
+  margin-top: 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--orca-bg-subtle);
+  border: 1px dashed var(--orca-border-medium);
+  font-size: 0.74rem;
+  color: var(--orca-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-scope-disclaimer code {
+  background: #ffffff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--orca-border-subtle);
+  font-family: var(--font-telemetry);
+  color: var(--orca-teal-600);
+}
+
+/* Global Bottom Scientific Footer */
+.auth-global-footer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 1.25rem 2rem;
+  font-size: 0.75rem;
+  color: var(--orca-text-muted);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+/* Tablet & Smaller Laptops */
+@media (max-width: 1024px) {
+  .auth-card-split {
+    flex-direction: column;
+    max-width: 640px;
+    min-height: auto;
+  }
+
+  .auth-branding-panel {
+    padding: 2rem 2rem;
+  }
+
+  .branding-title {
+    font-size: 1.6rem;
+  }
+
+  .branding-description {
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .branding-agents-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .agent-mini-badge {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .auth-form-panel {
+    padding: 2rem 2rem;
+  }
+}
+
+/* Mobile Screens */
+@media (max-width: 640px) {
+  .auth-topbar {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .auth-nav-toggle-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auth-nav-toggle-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px;
+  }
+
+  .auth-main-container {
+    padding: 1rem 0.85rem;
+  }
+
+  .auth-card-split {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-branding-panel {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .branding-title {
+    font-size: 1.35rem;
+  }
+
+  .branding-agents-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form-panel {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .auth-form-title {
+    font-size: 1.45rem;
+  }
+
+  .strength-checklist {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-global-footer {
+    padding: 1rem 1rem;
+    font-size: 0.7rem;
+  }
+}

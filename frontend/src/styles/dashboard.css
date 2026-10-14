@@ -1,0 +1,549 @@
+/* ==========================================================================
+   ORCA Marine Intelligence — Dashboard Layout & Views (dashboard.css)
+   Shared Ocean Science Theme for User & Admin Single Page Application (SPA)
+   ========================================================================== */
+
+/* Overall SPA Shell */
+.app-spa-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--orca-bg-page);
+}
+
+/* Dashboard Top Navigation Bar */
+.dashboard-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+  border-bottom: 1px solid var(--orca-border-subtle);
+  padding: 0.75rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-xs);
+}
+
+.dashboard-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.dashboard-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dashboard-brand-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--orca-navy-950);
+  line-height: 1.2;
+}
+
+.dashboard-brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--orca-text-muted);
+}
+
+/* Navigation Links */
+.dashboard-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--orca-bg-subtle);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--orca-border-subtle);
+}
+
+.dashboard-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--orca-text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.dashboard-nav-link:hover {
+  color: var(--orca-teal-600);
+}
+
+.dashboard-nav-link.active {
+  background: #ffffff;
+  color: var(--orca-teal-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--orca-bg-subtle);
+  border: 1px solid var(--orca-border-subtle);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--orca-navy-950);
+}
+
+.user-avatar-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--orca-teal-600), var(--orca-cyan-500));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Body Container with Sidebar + Canvas */
+.dashboard-workspace-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+/* Sidebar Component */
+.dashboard-sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid var(--orca-border-subtle);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sidebar-section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--orca-text-muted);
+  font-weight: 700;
+  padding: 0 0.75rem;
+  margin-bottom: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.sidebar-section-title:first-child {
+  margin-top: 0;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--orca-text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-item:hover {
+  background: var(--orca-bg-subtle);
+  color: var(--orca-navy-950);
+}
+
+.sidebar-item.active {
+  background: var(--orca-cyan-light);
+  color: var(--orca-teal-600);
+  font-weight: 600;
+}
+
+.sidebar-item-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.sidebar-item-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: #ffffff;
+  color: var(--orca-teal-600);
+  font-weight: 700;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+/* Telemetry Station Card in Sidebar */
+.sidebar-station-card {
+  background: linear-gradient(135deg, #09192f 0%, #0c2b4c 100%);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  color: #ffffff;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.station-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+.station-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orca-success);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--orca-success);
+}
+
+.station-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.station-coords {
+  font-family: var(--font-telemetry);
+  font-size: 0.72rem;
+  color: #38bdf8;
+  margin-top: 2px;
+}
+
+/* Main Dashboard Canvas */
+.dashboard-content-canvas {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+.dashboard-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.dashboard-page-title {
+  font-size: 1.85rem;
+  color: var(--orca-navy-950);
+  line-height: 1.2;
+}
+
+.dashboard-page-desc {
+  font-size: 0.9rem;
+  color: var(--orca-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Dashboard Filter Bar */
+.dashboard-filter-bar {
+  background: #ffffff;
+  border: 1px solid var(--orca-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.filter-pills-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-pill-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--orca-bg-subtle);
+  border: 1px solid var(--orca-border-subtle);
+  color: var(--orca-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-pill-btn:hover {
+  border-color: var(--orca-teal-500);
+  color: var(--orca-teal-600);
+}
+
+.filter-pill-btn.active {
+  background: var(--orca-teal-600);
+  border-color: var(--orca-teal-600);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 2-Column Grid Layout for Dashboard Modules */
+.dashboard-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+/* Marine Agent Telemetry Grid */
+.agents-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.agent-card-telemetry {
+  background: #ffffff;
+  border: 1px solid var(--orca-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.agent-card-telemetry:hover {
+  border-color: var(--orca-teal-400);
+  box-shadow: var(--shadow-md);
+}
+
+.agent-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.agent-meta-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-telemetry);
+  color: var(--orca-text-muted);
+  background: var(--orca-bg-subtle);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.agent-data-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--orca-border-subtle);
+}
+
+.agent-data-item:last-child {
+  border-bottom: none;
+}
+
+.agent-data-label {
+  color: var(--orca-text-muted);
+}
+
+.agent-data-val {
+  font-weight: 600;
+  color: var(--orca-navy-950);
+  font-family: var(--font-telemetry);
+}
+
+/* Activity & Event Stream */
+.event-stream-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-stream-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--orca-bg-subtle);
+  border: 1px solid var(--orca-border-subtle);
+  font-size: 0.82rem;
+}
+
+.event-icon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.event-content {
+  flex: 1;
+}
+
+.event-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.event-title {
+  font-weight: 600;
+  color: var(--orca-navy-950);
+}
+
+.event-time {
+  font-size: 0.72rem;
+  color: var(--orca-text-muted);
+  font-family: var(--font-telemetry);
+}
+
+/* Threshold Sliders / Controls in Admin Section */
+.admin-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.control-item-card {
+  padding: 1rem;
+  background: var(--orca-bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--orca-border-subtle);
+}
+
+.control-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--orca-navy-950);
+  margin-bottom: 0.25rem;
+}
+
+.control-item-desc {
+  font-size: 0.74rem;
+  color: var(--orca-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.control-input-slider {
+  width: 100%;
+  accent-color: var(--orca-teal-600);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .dashboard-sidebar {
+    width: 220px;
+  }
+
+  .dashboard-content-canvas {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .dashboard-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-navbar {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .dashboard-nav-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard-workspace-body {
+    flex-direction: column;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--orca-border-subtle);
+    padding: 1rem;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .sidebar-item {
+    width: auto;
+    padding: 6px 12px;
+  }
+
+  .sidebar-section-title,
+  .sidebar-station-card {
+    display: none;
+  }
+
+  .dashboard-content-canvas {
+    padding: 1.25rem 1rem;
+  }
+
+  .dashboard-grid-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .agents-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+}

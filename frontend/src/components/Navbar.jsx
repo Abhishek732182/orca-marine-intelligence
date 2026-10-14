@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { checkHealth, BASE_URL } from '../services/orcaApi';
 
-export default function Navbar() {
+export default function Navbar({ onToggleView, currentView }) {
   const [healthStatus, setHealthStatus] = useState('checking');
   const [apiInfo, setApiInfo] = useState(null);
 

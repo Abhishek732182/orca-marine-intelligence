@@ -1,0 +1,456 @@
+/* ==========================================================================
+   ORCA Marine Intelligence — Global Design System & Variables
+   Theme: Oceanic Science, Environmental Monitoring & Multi-Agent Intelligence
+   ========================================================================== */
+
+:root {
+  /* Oceanic Primary Palette */
+  --orca-navy-950: #050d1a;
+  --orca-navy-900: #0a192f;
+  --orca-navy-850: #0c203b;
+  --orca-navy-800: #0f2b48;
+  --orca-navy-700: #173b61;
+  --orca-navy-600: #1e4c7c;
+
+  /* Ocean Blue & Cyan Accents */
+  --orca-blue-700: #0369a1;
+  --orca-blue-600: #0284c7;
+  --orca-blue-500: #0ea5e9;
+  --orca-teal-600: #0284c7;
+  --orca-teal-500: #0ea5e9;
+  --orca-teal-400: #38bdf8;
+  --orca-cyan-600: #0891b2;
+  --orca-cyan-500: #06b6d4;
+  --orca-cyan-400: #22d3ee;
+  --orca-cyan-light: #e0f2fe;
+
+  /* Marine Surface & Neutral Tones */
+  --orca-bg-page: #f8fafc;
+  --orca-bg-surface: #ffffff;
+  --orca-bg-card: #ffffff;
+  --orca-bg-subtle: #f1f5f9;
+  --orca-bg-hover: #e2e8f0;
+  --orca-bg-dark-surface: #0a192f;
+  --orca-bg-dark-card: #0f2b48;
+
+  /* Marine Borders */
+  --orca-border-subtle: #e2e8f0;
+  --orca-border-medium: #cbd5e1;
+  --orca-border-dark: #1e3a5f;
+  --orca-border-focus: #0ea5e9;
+
+  /* Status Colors (Scientific & Operational States) */
+  --orca-success: #10b981;
+  --orca-success-bg: #ecfdf5;
+  --orca-success-border: #a7f3d0;
+  --orca-success-text: #065f46;
+
+  --orca-warning: #f59e0b;
+  --orca-warning-bg: #fffbeb;
+  --orca-warning-border: #fde68a;
+  --orca-warning-text: #92400e;
+
+  --orca-error: #ef4444;
+  --orca-error-bg: #fef2f2;
+  --orca-error-border: #fecaca;
+  --orca-error-text: #991b1b;
+
+  --orca-info: #0284c7;
+  --orca-info-bg: #f0f9ff;
+  --orca-info-border: #bae6fd;
+  --orca-info-text: #0369a1;
+
+  /* Text Colors (High Contrast & Readability) */
+  --orca-text-primary: #0f172a;
+  --orca-text-secondary: #475569;
+  --orca-text-muted: #64748b;
+  --orca-text-dim: #94a3b8;
+  --orca-text-inverse: #ffffff;
+  --orca-text-accent: #0284c7;
+
+  /* Typography */
+  --font-brand: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-telemetry: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(14, 165, 233, 0.2);
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Document Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--orca-bg-page);
+  color: var(--orca-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-brand);
+  color: var(--orca-text-primary);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* Accessibility Focus Visible */
+:focus-visible {
+  outline: 2px solid var(--orca-teal-500);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Standardized Buttons
+   ========================================================================== */
+.orca-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.orca-btn-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+.orca-btn-lg {
+  padding: 0.85rem 1.65rem;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+}
+
+/* Primary Ocean Teal/Blue Button */
+.orca-btn-primary {
+  background: linear-gradient(135deg, var(--orca-teal-600) 0%, #0369a1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.orca-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+.orca-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary Deep Navy Button */
+.orca-btn-secondary {
+  background: var(--orca-navy-900);
+  color: #ffffff;
+  border-color: var(--orca-navy-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.orca-btn-secondary:hover:not(:disabled) {
+  background: var(--orca-navy-800);
+  border-color: var(--orca-teal-500);
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+/* Outline Button */
+.orca-btn-outline {
+  background: #ffffff;
+  color: var(--orca-teal-600);
+  border: 1px solid var(--orca-border-medium);
+}
+
+.orca-btn-outline:hover:not(:disabled) {
+  background: var(--orca-bg-subtle);
+  border-color: var(--orca-teal-500);
+  color: #0369a1;
+}
+
+/* Ghost Button */
+.orca-btn-ghost {
+  background: transparent;
+  color: var(--orca-text-secondary);
+  border: 1px solid transparent;
+}
+
+.orca-btn-ghost:hover:not(:disabled) {
+  background: var(--orca-bg-subtle);
+  color: var(--orca-navy-950);
+}
+
+.orca-btn:disabled,
+.orca-btn-primary:disabled,
+.orca-btn-secondary:disabled,
+.orca-btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Standardized Cards
+   ========================================================================== */
+.orca-card {
+  background: var(--orca-bg-card);
+  border: 1px solid var(--orca-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: hidden;
+}
+
+.orca-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+.orca-card-header {
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid var(--orca-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.orca-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--orca-navy-950);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.orca-card-subtitle {
+  font-size: 0.78rem;
+  color: var(--orca-text-muted);
+  margin-top: 2px;
+}
+
+.orca-card-body {
+  padding: 1.4rem;
+}
+
+.orca-card-footer {
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid var(--orca-border-subtle);
+  background: var(--orca-bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--orca-text-muted);
+}
+
+/* ==========================================================================
+   Standardized Metric / Stat Cards
+   ========================================================================== */
+.orca-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.orca-stat-card {
+  background: #ffffff;
+  border: 1px solid var(--orca-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.orca-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--orca-teal-400);
+}
+
+.orca-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.orca-stat-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--orca-text-muted);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.orca-stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--orca-navy-950);
+  font-family: var(--font-brand);
+  line-height: 1.1;
+}
+
+.orca-stat-subtext {
+  font-size: 0.74rem;
+  color: var(--orca-text-secondary);
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.orca-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  background: var(--orca-cyan-light);
+  color: var(--orca-teal-600);
+}
+
+/* ==========================================================================
+   Standardized Status Badges
+   ========================================================================== */
+.orca-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-teal {
+  background: var(--orca-cyan-light);
+  color: var(--orca-teal-600);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.badge-emerald {
+  background: var(--orca-success-bg);
+  color: var(--orca-success-text);
+  border: 1px solid var(--orca-success-border);
+}
+
+.badge-amber {
+  background: var(--orca-warning-bg);
+  color: var(--orca-warning-text);
+  border: 1px solid var(--orca-warning-border);
+}
+
+.badge-coral {
+  background: var(--orca-error-bg);
+  color: var(--orca-error-text);
+  border: 1px solid var(--orca-error-border);
+}
+
+.badge-navy {
+  background: var(--orca-navy-900);
+  color: #38bdf8;
+  border: 1px solid var(--orca-navy-700);
+}
+
+/* ==========================================================================
+   Standardized Tables
+   ========================================================================== */
+.orca-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.orca-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.orca-table th {
+  padding: 0.85rem 1rem;
+  background: var(--orca-bg-subtle);
+  color: var(--orca-text-muted);
+  font-weight: 600;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--orca-border-medium);
+}
+
+.orca-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--orca-border-subtle);
+  color: var(--orca-text-primary);
+  vertical-align: middle;
+}
+
+.orca-table tr:hover td {
+  background: rgba(240, 249, 255, 0.5);
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+.orca-container {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.text-marine-teal {
+  color: var(--orca-teal-600);
+}
+
+.text-muted {
+  color: var(--orca-text-muted);
+}
+
+.font-telemetry {
+  font-family: var(--font-telemetry);
+}

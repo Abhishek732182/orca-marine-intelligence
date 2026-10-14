@@ -1,8 +1,16 @@
 import { spawn } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
 
 const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const artifactsDir = process.env.ARTIFACTS_DIR || path.join(os.tmpdir(), 'orca-browser-artifacts');
+const profileDir = path.join(artifactsDir, 'scratch', 'chrome_profile');
+
+fs.mkdirSync(profileDir, { recursive: true });
 
 console.log('Testing Chrome launch at:', chromePath);
+console.log('Profile Dir:', profileDir);
 
 const chromeProc = spawn(chromePath, [
   '--headless=new',
@@ -10,7 +18,7 @@ const chromeProc = spawn(chromePath, [
   '--disable-gpu',
   '--no-first-run',
   '--no-default-browser-check',
-  '--user-data-dir=C:\\Users\\ABHINANDAN KUMAR\\.gemini\\antigravity-ide\\brain\\fe2a00e7-62f2-4ff1-80a0-9f788857f360\\scratch\\chrome_profile',
+  `--user-data-dir=${profileDir}`,
   'about:blank',
 ]);
 
@@ -20,7 +28,7 @@ chromeProc.on('error', (err) => {
 });
 
 // Wait 2 seconds for CDP port to open
-await new Promise(r => setTimeout(r, 2000));
+await new Promise((r) => setTimeout(r, 2000));
 
 try {
   const res = await fetch('http://127.0.0.1:9222/json');
