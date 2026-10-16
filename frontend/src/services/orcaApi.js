@@ -79,6 +79,49 @@ async function getJson(endpoint, timeoutMs = 15000) {
   }
 }
 
+async function deleteJson(endpoint, timeoutMs = 15000) {
+  const url = `${BASE_URL}${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { method: 'DELETE', signal: controller.signal });
+    clearTimeout(timeoutId);
+    const json = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${json?.detail || response.statusText}`);
+    }
+    return json;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+async function patchJson(endpoint, data, timeoutMs = 15000) {
+  const url = `${BASE_URL}${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const json = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${json?.detail || response.statusText}`);
+    }
+    return json;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
 /**
  * 1. Weather Agent: POST /api/agents/weather/analyze
  */
@@ -140,6 +183,34 @@ export async function approveTool(payload) {
  */
 export async function getConversationHistory(conversationId) {
   return getJson(`/api/agents/assistant/conversations/${conversationId}`);
+}
+
+/**
+ * List all saved conversations for current user: GET /api/agents/assistant/conversations
+ */
+export async function listUserConversations() {
+  return getJson('/api/agents/assistant/conversations');
+}
+
+/**
+ * Persist or update conversation to server: POST /api/agents/assistant/conversations
+ */
+export async function saveUserConversation(conversation) {
+  return postJson('/api/agents/assistant/conversations', conversation);
+}
+
+/**
+ * Delete conversation on server: DELETE /api/agents/assistant/conversations/{id}
+ */
+export async function deleteServerConversation(conversationId) {
+  return deleteJson(`/api/agents/assistant/conversations/${conversationId}`);
+}
+
+/**
+ * Rename conversation on server: PATCH /api/agents/assistant/conversations/{id}
+ */
+export async function renameServerConversation(conversationId, title) {
+  return patchJson(`/api/agents/assistant/conversations/${conversationId}`, { title });
 }
 
 /**

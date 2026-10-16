@@ -11,8 +11,18 @@ import {
   chatAssistant,
   getAssistantTools,
 } from '../src/services/orcaApi.js';
+let isBackendLive = false;
+try {
+  const probe = await fetch('http://127.0.0.1:8001/api/health', { signal: AbortSignal.timeout(600) });
+  isBackendLive = probe.ok;
+} catch {
+  isBackendLive = false;
+}
 
-describe('Live Backend Integration Tests (http://127.0.0.1:8001)', () => {
+describe(
+  'Live Backend Integration Tests (http://127.0.0.1:8001)',
+  { skip: !isBackendLive ? 'Live backend server at http://127.0.0.1:8001 is offline' : false },
+  () => {
   it('1. GET /api/health - verifies active service', async () => {
     const health = await checkHealth();
     assert.equal(health.status, 'ok');
