@@ -2,100 +2,66 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import MarineNavbar from './components/MarineNavbar';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 
+import { evaluateRootRedirect } from './utils/routeGuards.js';
+
+export { evaluateRootRedirect };
+
 /**
- * Authentication-aware root redirect.
- * Redirects authenticated researchers to /user/dashboard,
- * authenticated admins to /admin/dashboard,
- * and unauthenticated visitors to /login.
+ * Root landing redirect based on authentication state
  */
-function RootRedirect() {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  if (user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-  return <Navigate to="/user/dashboard" replace />;
+export function RootRedirect() {
+  const auth = useAuth();
+  const target = evaluateRootRedirect(auth);
+  if (!target) return null;
+  return <Navigate to={target} replace />;
 }
 
 /**
  * ORCA — Marine Ecosystem Reasoning with Collaborative Agents
- * Single Page Application (SPA) Root with React Router & AuthProvider
+ * Single Page Application (SPA) Root Router
  */
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="app-spa-layout">
-          {/* Global Marine Navbar with Client-Side Active NavLinks & Session Controls */}
-          <MarineNavbar />
+        <div className="min-h-screen w-full flex flex-col bg-white text-slate-900 font-sans antialiased">
+          <Routes>
+            {/* Root Landing Route */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* Client-Side Routes Container */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Routes>
-              {/* Authentication-aware root redirect */}
-              <Route path="/" element={<RootRedirect />} />
+            {/* Public Authentication Pages */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-              {/* Public Authentication Pages */}
-              <Route
-                path="/register"
-                element={
-                  <main className="auth-main-container">
-                    <Register />
-                  </main>
-                }
-              />
-              <Route
-                path="/login"
-                element={
-                  <main className="auth-main-container">
-                    <Login />
-                  </main>
-                }
-              />
+            {/* Protected User Workspace (Chat-First Experience) */}
+            <Route
+              path="/user/dashboard"
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Protected User Section (Integrated Researcher & Specialist Workspace) */}
-              <Route
-                path="/user/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Protected Admin Console */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Protected Admin Section (Agent Cluster & System Administration) */}
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Catch-all Fallback */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-
-          {/* Unified Marine Platform Footer */}
-          <footer className="auth-global-footer">
-            <div>
-              <strong>ORCA — Marine Ecosystem Reasoning with Collaborative Agents</strong> • Evidence-Grounded Ocean Intelligence & Maritime Safety
-            </div>
-            <div style={{ marginTop: '4px', color: 'var(--orca-text-muted)' }}>
-              Single Page Application (SPA) Architecture • Decentralized Multi-Agent Telemetry • Open-Meteo & FastAPI Integrated
-            </div>
-          </footer>
+            {/* Catch-all 404 Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </div>
       </BrowserRouter>
     </AuthProvider>

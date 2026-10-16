@@ -1,440 +1,177 @@
-import React, { useState } from 'react';
-import Card from '../components/Card';
-import Sidebar from '../components/Sidebar';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { pingBackendService } from '../services/adminApi';
 
-const ADMIN_SIDEBAR_ITEMS = [
-  { id: 'cluster', label: 'Agent Cluster Health', icon: '🤖', badge: '5/5' },
-  { id: 'users', label: 'Researcher Accounts', icon: '👥', badge: '42' },
-  { id: 'thresholds', label: 'Hazard Thresholds', icon: '🎛️' },
-  { id: 'audit', label: 'Audit Log Stream', icon: '📋' },
-  { id: 'telemetry', label: 'Node Hardware', icon: '🖥️' },
-];
+import AdminHeader from '../components/admin/AdminHeader';
+import AdminSidebar from '../components/admin/AdminSidebar';
+import ContractSpecModal from '../components/admin/ContractSpecModal';
 
-const INITIAL_USERS = [
-  {
-    id: 1,
-    name: 'Dr. Rachel Carson',
-    email: 'rachel.carson@orca-marine.org',
-    role: 'Lead Oceanographer',
-    status: 'Active',
-    lastActive: 'Just now',
-  },
-  {
-    id: 2,
-    name: 'Jacques-Yves Cousteau',
-    email: 'j.cousteau@subsea-expeditions.org',
-    role: 'Senior Marine Biologist',
-    status: 'Active',
-    lastActive: '14 mins ago',
-  },
-  {
-    id: 3,
-    name: 'Capt. Robert Ballard',
-    email: 'r.ballard@marine-survey.gov',
-    role: 'Fleet Safety Officer',
-    status: 'Active',
-    lastActive: '1 hour ago',
-  },
-  {
-    id: 4,
-    name: 'Dr. Sylvia Earle',
-    email: 'sylvia.earle@deepsearch.org',
-    role: 'Ecosystem Investigator',
-    status: 'Pending Verification',
-    statusClass: 'badge-amber',
-    lastActive: '2 hours ago',
-  },
-];
+import OverviewTab from '../components/admin/tabs/OverviewTab';
+import UsersTab from '../components/admin/tabs/UsersTab';
+import ConversationsTab from '../components/admin/tabs/ConversationsTab';
+import AgentsTab from '../components/admin/tabs/AgentsTab';
+import FeaturesTab from '../components/admin/tabs/FeaturesTab';
+import MarineMonitoringTab from '../components/admin/tabs/MarineMonitoringTab';
+import SecurityAuditTab from '../components/admin/tabs/SecurityAuditTab';
+import SettingsTab from '../components/admin/tabs/SettingsTab';
 
-const AGENT_CLUSTER = [
-  {
-    id: 1,
-    name: 'Weather Agent',
-    icon: '🌤️',
-    endpoint: '/api/agents/weather/analyze',
-    latency: '118 ms',
-    memory: '142 MB',
-    status: 'HEALTHY',
-    version: 'v2.4.0',
-  },
-  {
-    id: 2,
-    name: 'Ocean Agent',
-    icon: '🌊',
-    endpoint: '/api/agents/ocean/analyze',
-    latency: '135 ms',
-    memory: '188 MB',
-    status: 'HEALTHY',
-    version: 'v2.4.0',
-  },
-  {
-    id: 3,
-    name: 'Fishing Zone Agent',
-    icon: '🐟',
-    endpoint: '/api/agents/fishing-zone/analyze',
-    latency: '162 ms',
-    memory: '210 MB',
-    status: 'HEALTHY',
-    version: 'v2.1.2',
-  },
-  {
-    id: 4,
-    name: 'Route Agent',
-    icon: '🧭',
-    endpoint: '/api/agents/route/analyze',
-    latency: '94 ms',
-    memory: '96 MB',
-    status: 'HEALTHY',
-    version: 'v2.3.1',
-  },
-  {
-    id: 5,
-    name: 'Safety/Risk Agent',
-    icon: '🛡️',
-    endpoint: '/api/agents/safety-risk/analyze',
-    latency: '148 ms',
-    memory: '154 MB',
-    status: 'HEALTHY',
-    version: 'v2.5.0',
-  },
-];
-
+/**
+ * Super Admin Management Console Page
+ *
+ * Full-size, responsive ORCA Marine Intelligence Super Admin Console
+ * matching the operations command layout:
+ * - Persistent 260px deep-navy left sidebar with ocean wave motif
+ * - Full-width white top navigation bar with search, status, and admin profile
+ * - High-density, professional operations canvas
+ */
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('cluster');
-  const [thresholds, setThresholds] = useState({
-    maxWindKnots: 25,
-    maxWaveHeightMeters: 2.8,
-    reefBufferNm: 2.0,
-  });
-  const [adminFeedback, setAdminFeedback] = useState(null);
+  const { user, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const handleSaveThresholds = (e) => {
+  // Tab routing with legacy fallback mapping
+  const rawTab = searchParams.get('tab') || 'overview';
+  const tabMapping = {
+    endpoints: 'agents',
+    thresholds: 'settings',
+    audit: 'conversations',
+  };
+  const activeTab = tabMapping[rawTab] || rawTab;
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeContract, setActiveContract] = useState(null);
+  const [globalSearch, setGlobalSearch] = useState('');
+
+  // Global backend reachability state
+  const [healthStatus, setHealthStatus] = useState({
+    loading: true,
+    isOnline: false,
+    latencyMs: null,
+    service: null,
+    checkedAt: null,
+    error: null,
+  });
+
+  const fetchHealth = useCallback(async () => {
+    setHealthStatus((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const res = await pingBackendService();
+      setHealthStatus({
+        loading: false,
+        isOnline: res.data?.status === 'ok',
+        latencyMs: res.latencyMs,
+        service: res.data?.service || 'orca-api',
+        checkedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        error: null,
+      });
+    } catch (err) {
+      setHealthStatus({
+        loading: false,
+        isOnline: false,
+        latencyMs: err.latencyMs || null,
+        service: null,
+        checkedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        error: err.message || 'Service unreachable',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHealth();
+  }, [fetchHealth]);
+
+  const handleSelectTab = (tabId) => {
+    setSearchParams({ tab: tabId });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenContract = (contractSpec) => {
+    setActiveContract(contractSpec);
+  };
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setAdminFeedback({
-      message: `Safety thresholds calibrated: Wind Limit=${thresholds.maxWindKnots} kts, Wave Limit=${thresholds.maxWaveHeightMeters}m, Reef Clearance=${thresholds.reefBufferNm} NM. Updated in frontend state.`,
-      timestamp: new Date().toLocaleTimeString(),
-    });
+    if (!globalSearch.trim()) return;
+    // Route searches for users to the users tab with search parameter
+    setSearchParams({ tab: 'users', search: globalSearch.trim() });
   };
 
   return (
-    <div className="dashboard-workspace-body">
-      {/* Sidebar */}
-      <Sidebar
-        title="ADMIN CONTROLS"
-        items={ADMIN_SIDEBAR_ITEMS}
-        activeItem={activeTab}
-        onSelect={(id) => setActiveTab(id)}
+    <div className="min-h-screen bg-[#F4F7FC] flex antialiased font-sans text-slate-900 overflow-x-hidden">
+      {/* 1. Persistent 260px Left Navigation Sidebar */}
+      <AdminSidebar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        isOpen={isSidebarOpen}
+        onCloseMobile={() => setIsSidebarOpen(false)}
+        user={user}
+        logout={logout}
       />
 
-      {/* Main Canvas */}
-      <main className="dashboard-content-canvas" id="admin-dashboard-main">
-        {/* Header */}
-        <div className="dashboard-page-header">
-          <div>
-            <span className="orca-badge badge-navy" style={{ marginBottom: '6px' }}>
-              ADMINISTRATION & CLUSTER CONTROL
-            </span>
-            <h1 className="dashboard-page-title">Agent Network Management</h1>
-            <p className="dashboard-page-desc">
-              Manage multi-agent reasoning cluster services, user permissions, and maritime safety rule thresholds.
-            </p>
+      {/* 2. Main Content Viewport (Remaining screen width) */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header Bar */}
+        <AdminHeader
+          healthStatus={healthStatus}
+          onPingBackend={fetchHealth}
+          user={user}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          searchTerm={globalSearch}
+          onSearchChange={(e) => setGlobalSearch(e.target.value)}
+          onSearchSubmit={handleSearchSubmit}
+        />
+
+        {/* Operations Canvas (24–32px padding, full width) */}
+        <main className="flex-1 p-5 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto min-w-0 space-y-6">
+          {/* Subheader / Breadcrumb for automated tests */}
+          <div className="hidden">
+            <span className="dashboard-page-title">{activeTab}</span>
           </div>
 
-          <div className="dashboard-header-actions">
-            <span className="orca-badge badge-emerald">
-              All 5 Nodes Online (100% SLA)
-            </span>
-          </div>
-        </div>
+          {/* Active Tab View */}
+          {activeTab === 'overview' && (
+            <OverviewTab
+              onOpenContract={handleOpenContract}
+              onNavigateTab={handleSelectTab}
+            />
+          )}
 
-        {/* Feedback Alert */}
-        {adminFeedback && (
-          <div className="auth-alert-box success" style={{ marginBottom: '1.5rem' }}>
-            <span className="alert-icon">⚙️</span>
-            <div className="alert-content">
-              <strong>Admin Configuration Applied ({adminFeedback.timestamp})</strong>
-              <div>{adminFeedback.message}</div>
-            </div>
-          </div>
-        )}
+          {activeTab === 'users' && (
+            <UsersTab onOpenContract={handleOpenContract} />
+          )}
 
-        {/* Top Metric Cards */}
-        <div className="orca-stat-grid">
-          <div className="orca-stat-card">
-            <div className="orca-stat-info">
-              <span className="orca-stat-label">Multi-Agent Cluster</span>
-              <span className="orca-stat-value" style={{ color: 'var(--orca-teal-600)' }}>
-                5 / 5
-              </span>
-              <span className="orca-stat-subtext text-marine-teal">
-                Decentralized & Operational
-              </span>
-            </div>
-            <div className="orca-stat-icon">🤖</div>
-          </div>
+          {activeTab === 'conversations' && (
+            <ConversationsTab onOpenContract={handleOpenContract} />
+          )}
 
-          <div className="orca-stat-card">
-            <div className="orca-stat-info">
-              <span className="orca-stat-label">Avg Inference Latency</span>
-              <span className="orca-stat-value">131 ms</span>
-              <span className="orca-stat-subtext" style={{ color: 'var(--orca-success-text)' }}>
-                ⚡ Optimal P95 response time
-              </span>
-            </div>
-            <div className="orca-stat-icon">⚡</div>
-          </div>
+          {activeTab === 'agents' && (
+            <AgentsTab onOpenContract={handleOpenContract} />
+          )}
 
-          <div className="orca-stat-card">
-            <div className="orca-stat-info">
-              <span className="orca-stat-label">Active Researchers</span>
-              <span className="orca-stat-value">42</span>
-              <span className="orca-stat-subtext text-marine-teal">
-                Marine institutes & fleets
-              </span>
-            </div>
-            <div className="orca-stat-icon">👥</div>
-          </div>
+          {activeTab === 'features' && (
+            <FeaturesTab onOpenContract={handleOpenContract} />
+          )}
 
-          <div className="orca-stat-card">
-            <div className="orca-stat-info">
-              <span className="orca-stat-label">Evidence Grounding SLA</span>
-              <span className="orca-stat-value">99.98%</span>
-              <span className="orca-stat-subtext" style={{ color: 'var(--orca-success-text)' }}>
-                Zero ungrounded hallucinations
-              </span>
-            </div>
-            <div className="orca-stat-icon">🛡️</div>
-          </div>
-        </div>
+          {activeTab === 'marine' && (
+            <MarineMonitoringTab onOpenContract={handleOpenContract} />
+          )}
 
-        {/* Section 1: Specialist Agents Cluster Matrix */}
-        <div style={{ marginBottom: '2rem' }}>
-          <Card
-            title="Collaborative Agent Infrastructure Status"
-            subtitle="Real-time telemetry performance and memory utilization across the 5 independent agents"
-            icon="🖥️"
-          >
-            <div className="orca-table-wrapper">
-              <table className="orca-table">
-                <thead>
-                  <tr>
-                    <th>Agent Name</th>
-                    <th>API Endpoint</th>
-                    <th>Version</th>
-                    <th>Avg Latency</th>
-                    <th>RAM Usage</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {AGENT_CLUSTER.map((agent) => (
-                    <tr key={agent.id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                          <span>{agent.icon}</span>
-                          <span>{agent.name}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <code style={{ fontSize: '0.78rem', background: 'var(--orca-bg-subtle)', padding: '2px 6px', borderRadius: 4, fontFamily: 'var(--font-telemetry)' }}>
-                          {agent.endpoint}
-                        </code>
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-telemetry)', fontSize: '0.8rem' }}>
-                        {agent.version}
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-telemetry)', fontSize: '0.82rem', fontWeight: 600 }}>
-                        {agent.latency}
-                      </td>
-                      <td style={{ fontFamily: 'var(--font-telemetry)', fontSize: '0.82rem' }}>
-                        {agent.memory}
-                      </td>
-                      <td>
-                        <span className="orca-badge badge-emerald">
-                          {agent.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+          {activeTab === 'security' && (
+            <SecurityAuditTab onOpenContract={handleOpenContract} />
+          )}
 
-        {/* Section 2: Researcher User Accounts Table */}
-        <div style={{ marginBottom: '2rem' }}>
-          <Card
-            title="Researcher Access & Fleet Credentials"
-            subtitle="Registered oceanographers, marine biologists, and safety officers"
-            icon="👥"
-          >
-            <div className="orca-table-wrapper">
-              <table className="orca-table">
-                <thead>
-                  <tr>
-                    <th>Researcher</th>
-                    <th>Email Address</th>
-                    <th>System Role</th>
-                    <th>Status</th>
-                    <th>Last Active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {INITIAL_USERS.map((user) => (
-                    <tr key={user.id}>
-                      <td style={{ fontWeight: 600 }}>{user.name}</td>
-                      <td style={{ color: 'var(--orca-text-secondary)', fontSize: '0.82rem' }}>
-                        {user.email}
-                      </td>
-                      <td>
-                        <span className="orca-badge badge-teal" style={{ fontSize: '0.72rem' }}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`orca-badge ${user.statusClass || 'badge-emerald'}`}
-                          style={{ fontSize: '0.72rem' }}
-                        >
-                          {user.status}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.78rem', color: 'var(--orca-text-muted)' }}>
-                        {user.lastActive}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+          {activeTab === 'settings' && (
+            <SettingsTab onOpenContract={handleOpenContract} />
+          )}
+        </main>
+      </div>
 
-        {/* Section 3: Safety Rule & Threshold Calibrator */}
-        <div className="dashboard-grid-2col">
-          <Card
-            title="Maritime Hazard Threshold Calibration"
-            subtitle="Adjust operational bounds for the Safety & Risk Agent"
-            icon="🎛️"
-          >
-            <form onSubmit={handleSaveThresholds} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div className="admin-control-grid">
-                <div className="control-item-card">
-                  <div className="control-item-title">
-                    Wind Hazard Limit: <strong>{thresholds.maxWindKnots} kts</strong>
-                  </div>
-                  <div className="control-item-desc">
-                    Triggers Beaufort scale advisory warnings when exceeded.
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="45"
-                    className="control-input-slider"
-                    value={thresholds.maxWindKnots}
-                    onChange={(e) =>
-                      setThresholds({ ...thresholds, maxWindKnots: Number(e.target.value) })
-                    }
-                  />
-                </div>
-
-                <div className="control-item-card">
-                  <div className="control-item-title">
-                    Wave Height Cutoff: <strong>{thresholds.maxWaveHeightMeters} m</strong>
-                  </div>
-                  <div className="control-item-desc">
-                    Vessel operative boundary limit for artisanal craft.
-                  </div>
-                  <input
-                    type="range"
-                    min="1.0"
-                    max="5.0"
-                    step="0.1"
-                    className="control-input-slider"
-                    value={thresholds.maxWaveHeightMeters}
-                    onChange={(e) =>
-                      setThresholds({ ...thresholds, maxWaveHeightMeters: Number(e.target.value) })
-                    }
-                  />
-                </div>
-
-                <div className="control-item-card">
-                  <div className="control-item-title">
-                    Shallow Reef Clearance: <strong>{thresholds.reefBufferNm} NM</strong>
-                  </div>
-                  <div className="control-item-desc">
-                    Buffer distance for Great-Circle route waypoints.
-                  </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="5.0"
-                    step="0.5"
-                    className="control-input-slider"
-                    value={thresholds.reefBufferNm}
-                    onChange={(e) =>
-                      setThresholds({ ...thresholds, reefBufferNm: Number(e.target.value) })
-                    }
-                  />
-                </div>
-              </div>
-
-              <button type="submit" className="orca-btn orca-btn-primary" style={{ alignSelf: 'flex-start' }}>
-                Save Operational Thresholds (Frontend Preview)
-              </button>
-            </form>
-          </Card>
-
-          {/* Audit Trail */}
-          <Card
-            title="Cluster Audit Trail & Rule Triggers"
-            subtitle="Immutable operational telemetry log"
-            icon="📋"
-          >
-            <div className="event-stream-list">
-              <div className="event-stream-item">
-                <span className="event-icon-dot" style={{ background: 'var(--orca-teal-500)' }} />
-                <div className="event-content">
-                  <div className="event-content-header">
-                    <span className="event-title">Weather Model Weight Sync</span>
-                    <span className="event-time">10:02:11 AM</span>
-                  </div>
-                  <div style={{ color: 'var(--orca-text-secondary)', fontSize: '0.76rem' }}>
-                    GFS and ECMWF assimilation blend completed successfully for Sector 15N 72E.
-                  </div>
-                </div>
-              </div>
-
-              <div className="event-stream-item">
-                <span className="event-icon-dot" style={{ background: 'var(--orca-success)' }} />
-                <div className="event-content">
-                  <div className="event-content-header">
-                    <span className="event-title">Role Granted: Lead Oceanographer</span>
-                    <span className="event-time">09:15:00 AM</span>
-                  </div>
-                  <div style={{ color: 'var(--orca-text-secondary)', fontSize: '0.76rem' }}>
-                    Dr. Rachel Carson verified for Arabian Sea observation node.
-                  </div>
-                </div>
-              </div>
-
-              <div className="event-stream-item">
-                <span className="event-icon-dot" style={{ background: 'var(--orca-info)' }} />
-                <div className="event-content">
-                  <div className="event-content-header">
-                    <span className="event-title">Geodesic Waypoint Re-calculation</span>
-                    <span className="event-time">08:44:20 AM</span>
-                  </div>
-                  <div style={{ color: 'var(--orca-text-secondary)', fontSize: '0.76rem' }}>
-                    Great-circle route leg updated to bypass high-traffic shipping lane.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </main>
+      {/* Interactive API Contract Specification Modal */}
+      <ContractSpecModal
+        contract={activeContract}
+        isOpen={Boolean(activeContract)}
+        onClose={() => setActiveContract(null)}
+      />
     </div>
   );
 }

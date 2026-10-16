@@ -2,13 +2,21 @@ import React, { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY_TOKEN = 'orca_auth_token';
-const STORAGE_KEY_USER = 'orca_auth_user';
+export const STORAGE_KEY_TOKEN = 'orca_auth_token';
+export const STORAGE_KEY_USER = 'orca_auth_user';
 
 /**
- * Default scientific accounts for fast evaluation / offline demo mode
+ * Standard test accounts for evaluation and offline preview
  */
-const DEMO_ACCOUNTS = {
+export const DEMO_ACCOUNTS = {
+  'rachel.carson@orca-marine.org': {
+    id: 'usr_researcher_01',
+    fullName: 'Dr. Rachel Carson',
+    email: 'rachel.carson@orca-marine.org',
+    role: 'researcher',
+    affiliation: 'National Institute of Oceanography (NIO)',
+    avatarInitials: 'RC',
+  },
   'admin@orca.io': {
     id: 'usr_admin_01',
     fullName: 'Chief Operations Admin',
@@ -17,36 +25,25 @@ const DEMO_ACCOUNTS = {
     affiliation: 'ORCA Maritime Defense & Operations',
     avatarInitials: 'AD',
   },
-  'rachel.carson@orca-marine.org': {
-    id: 'usr_researcher_01',
-    fullName: 'Dr. Rachel Carson',
-    email: 'rachel.carson@orca-marine.org',
-    role: 'oceanographer',
-    affiliation: 'National Institute of Oceanography (NIO)',
-    avatarInitials: 'RC',
-  },
 };
 
 export function AuthProvider({ children }) {
-  // Initialize state synchronously from localStorage with lazy initializer to avoid cascading renders
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_USER);
       if (stored) return JSON.parse(stored);
-      // Default initial session for immediate reviewer testing
-      return DEMO_ACCOUNTS['rachel.carson@orca-marine.org'];
+      return null;
     } catch {
-      return DEMO_ACCOUNTS['rachel.carson@orca-marine.org'];
+      return null;
     }
   });
 
   const [token, setToken] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_TOKEN);
-      if (stored) return stored;
-      return 'orca_demo_jwt_token_header.payload.signature';
+      return stored || null;
     } catch {
-      return 'orca_demo_jwt_token_header.payload.signature';
+      return null;
     }
   });
 
@@ -55,17 +52,17 @@ export function AuthProvider({ children }) {
 
   /**
    * Log in user with credentials.
-   * Connects to backend if available, or seamlessly matches demo/local accounts.
+   * Connects demo accounts seamlessly or creates real session state.
    */
   const login = async (email, _password) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Simulate network verification
+      // Brief simulated network latency
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedEmail = (email || '').trim().toLowerCase();
       const existingDemo = DEMO_ACCOUNTS[normalizedEmail];
 
       const authenticatedUser = existingDemo || {
@@ -95,7 +92,7 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Register a new researcher or maritime safety officer
+   * Register a new researcher or maritime user
    */
   const register = async ({ fullName, email, _password }) => {
     setIsLoading(true);
@@ -104,7 +101,7 @@ export function AuthProvider({ children }) {
     try {
       await new Promise((resolve) => setTimeout(resolve, 350));
 
-      const initials = fullName
+      const initials = (fullName || '')
         .trim()
         .split(' ')
         .filter(Boolean)
@@ -151,7 +148,7 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Fast toggle role for testing admin privileges vs researcher access
+   * Role switch helper for testing admin privileges vs researcher access
    */
   const switchRole = (newRole) => {
     if (!user) return;

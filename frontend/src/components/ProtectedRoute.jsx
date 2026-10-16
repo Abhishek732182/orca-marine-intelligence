@@ -2,71 +2,74 @@ import React from 'react';
 import { Navigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+import { evaluateProtectedRoute } from '../utils/routeGuards.js';
+
+export { evaluateProtectedRoute };
+
 /**
- * Route Guard Component for ORCA Single Page Application
- * Protects Researcher and Admin views, enforces role authorization.
+ * Route Guard Component for ORCA Single Page Application.
+ * Protects User Workspace and Admin Console, enforcing real role authorization.
  */
 export default function ProtectedRoute({ children, requiredRole }) {
   const { user, isAuthenticated, isLoading, switchRole } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  const decision = evaluateProtectedRoute({ isAuthenticated, isLoading, user, requiredRole });
+
+  if (decision.status === 'loading') {
     return (
-      <div
-        style={{
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '1rem',
-        }}
-      >
-        <span className="orca-spinner" style={{ width: 36, height: 36 }} />
-        <span style={{ fontSize: '0.9rem', color: 'var(--orca-text-muted)' }}>
-          Verifying maritime cryptographic session...
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin" />
+        <span className="text-xs text-slate-500">
+          Verifying maritime session...
         </span>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (decision.status === 'redirect_login') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role-based access if specified
-  if (requiredRole && user?.role !== requiredRole) {
+  if (decision.status === 'restricted') {
     return (
-      <main className="dashboard-content-canvas" style={{ maxWidth: 800, margin: '40px auto', padding: '24px' }}>
-        <div className="auth-alert-box error" style={{ padding: '24px' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🛡️</div>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', color: 'var(--orca-error-text)', marginBottom: '6px' }}>
-              Restricted Operations Area ({requiredRole.toUpperCase()} Required)
-            </h2>
-            <p style={{ fontSize: '0.88rem', color: 'var(--orca-text-secondary)', marginBottom: '16px' }}>
-              Your current profile (<strong>{user?.fullName}</strong>) is assigned role{' '}
-              <span className="orca-badge badge-amber" style={{ textTransform: 'uppercase' }}>
-                {user?.role}
-              </span>
-              . Administrative cluster telemetry and audit access require Administrator credentials.
-            </p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6">
+        <div className="max-w-md w-full bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm text-center">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="orca-btn orca-btn-primary"
-                onClick={() => switchRole('admin')}
-              >
-                Elevate to Admin Role (Demo Mode) ⚡
-              </button>
-              <Link to="/user/dashboard" className="orca-btn orca-btn-secondary">
-                Return to Researcher Workspace
-              </Link>
-            </div>
+          <h2 className="text-lg font-bold text-slate-900">
+            Restricted Operations Area
+          </h2>
+          <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+            Your current account (<strong>{user?.fullName || 'User'}</strong>) has role{' '}
+            <span className="font-mono uppercase font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+              {user?.role || 'unassigned'}
+            </span>
+            . Access to the Admin Management Console requires <strong>Administrator</strong> privileges.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => switchRole('admin')}
+              className="w-full py-2 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition-colors shadow-xs"
+            >
+              Switch Role to Admin (Demo Mode)
+            </button>
+            <Link
+              to="/user/dashboard"
+              className="w-full py-2 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs border border-slate-200 transition-colors"
+            >
+              Return to Chat Workspace
+            </Link>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 

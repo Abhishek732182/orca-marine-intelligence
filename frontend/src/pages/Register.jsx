@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import FormInput from '../components/FormInput';
-import Button from '../components/Button';
-import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
-import MarineBrandingPanel from '../components/MarineBrandingPanel';
 import { useAuth } from '../context/AuthContext';
 import {
   validateFullName,
@@ -11,12 +7,12 @@ import {
   validatePassword,
   validateConfirmPassword,
 } from '../utils/validation';
+import OrcaLogo from '../components/OrcaLogo';
 
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  // Form input state
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -24,16 +20,36 @@ export default function Register() {
     confirmPassword: '',
   });
 
-  // Errors state
   const [errors, setErrors] = useState({});
-  // Touched state for touched fields
   const [touched, setTouched] = useState({});
-  // Submission feedback state
-  const [successInfo, setSuccessInfo] = useState(null);
   const [regError, setRegError] = useState(null);
+  const [successInfo, setSuccessInfo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Field validator helper using shared validation utilities
+  // Calculate live password strength rating
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, text: 'None', color: 'bg-slate-200 text-slate-400' };
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+
+    switch (score) {
+      case 1:
+        return { score: 1, text: 'Weak', color: 'bg-rose-500 text-rose-600' };
+      case 2:
+      case 3:
+        return { score: 2, text: 'Moderate', color: 'bg-amber-500 text-amber-600' };
+      case 4:
+        return { score: 4, text: 'Strong', color: 'bg-emerald-500 text-emerald-600' };
+      default:
+        return { score: 1, text: 'Weak', color: 'bg-rose-500 text-rose-600' };
+    }
+  };
+
+  const strength = getPasswordStrength(formData.password);
+
   const validateField = (name, value, allValues = formData) => {
     switch (name) {
       case 'fullName':
@@ -49,7 +65,6 @@ export default function Register() {
     }
   };
 
-  // Handle live input change with real-time validation if field was touched
   const handleChange = (e) => {
     const { name, value } = e.target;
     const updatedForm = { ...formData, [name]: value };
@@ -59,17 +74,9 @@ export default function Register() {
       const errorMsg = validateField(name, value, updatedForm);
       setErrors((prev) => ({ ...prev, [name]: errorMsg }));
     }
-
-    if (name === 'password' && touched.confirmPassword) {
-      const confirmError = validateField('confirmPassword', updatedForm.confirmPassword, updatedForm);
-      setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
-    }
-
-    if (successInfo) setSuccessInfo(null);
     if (regError) setRegError(null);
   };
 
-  // Handle onBlur for real-time validation when leaving the field
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
@@ -77,31 +84,24 @@ export default function Register() {
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setTouched({
-      fullName: true,
-      email: true,
-      password: true,
-      confirmPassword: true,
-    });
+    const nameErr = validateField('fullName', formData.fullName);
+    const emailErr = validateField('email', formData.email);
+    const passErr = validateField('password', formData.password);
+    const confirmErr = validateField('confirmPassword', formData.confirmPassword, formData);
 
     const newErrors = {
-      fullName: validateField('fullName', formData.fullName, formData),
-      email: validateField('email', formData.email, formData),
-      password: validateField('password', formData.password, formData),
-      confirmPassword: validateField('confirmPassword', formData.confirmPassword, formData),
+      fullName: nameErr,
+      email: emailErr,
+      password: passErr,
+      confirmPassword: confirmErr,
     };
-
     setErrors(newErrors);
+    setTouched({ fullName: true, email: true, password: true, confirmPassword: true });
 
-    const hasError = Object.values(newErrors).some((err) => Boolean(err));
-    if (hasError) {
-      setSuccessInfo(null);
-      return;
-    }
+    if (nameErr || emailErr || passErr || confirmErr) return;
 
     setIsSubmitting(true);
     setRegError(null);
@@ -110,238 +110,193 @@ export default function Register() {
       const result = await register({
         fullName: formData.fullName,
         email: formData.email,
-        password: formData.password,
+        _password: formData.password,
       });
-
-      setSuccessInfo({
-        fullName: result.user.fullName,
-        email: result.user.email,
-        timestamp: new Date().toLocaleTimeString(),
-      });
-
-      setTimeout(() => {
-        navigate('/user/dashboard');
-      }, 700);
+      if (result.success) {
+        setSuccessInfo(`Account successfully registered for ${result.user.fullName}. Redirecting...`);
+        setTimeout(() => {
+          navigate(result.user?.role === 'admin' ? '/admin/dashboard' : '/user/dashboard', { replace: true });
+        }, 600);
+      }
     } catch (err) {
-      setRegError(err.message || 'Registration failed.');
+      setRegError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReset = () => {
-    setFormData({
-      fullName: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
-    setErrors({});
-    setTouched({});
-    setSuccessInfo(null);
-    setRegError(null);
-  };
-
   return (
-    <div className="auth-card-split" id="orca-registration-card">
-      {/* Left: Scientific Marine Mission & Agents Showcase */}
-      <MarineBrandingPanel />
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Brand Header */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <OrcaLogo variant="large" className="mb-2" />
+        <h2 className="auth-form-title mt-3 text-2xl font-bold tracking-tight text-slate-900">
+          Create an ORCA Account
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Join the Evidence-Grounded Marine Intelligence Workspace
+        </p>
+      </div>
 
-      {/* Right: Registration Form Panel */}
-      <div className="auth-form-panel">
-        <div className="auth-form-header">
-          <span className="auth-form-badge">Researcher Onboarding</span>
-          <h1 className="auth-form-title">Create ORCA Account</h1>
-          <p className="auth-form-subtitle">
-            Register to access multi-agent oceanographic telemetry, sea state analyses, and route safety assessments.
-          </p>
-        </div>
-
-        {/* Error notification */}
-        {regError && (
-          <div className="auth-alert-box error" role="alert" style={{ marginBottom: '16px' }}>
-            <span className="alert-icon" aria-hidden="true">⚠️</span>
-            <div className="alert-content">
-              <strong>Registration Notice</strong>
-              <div>{regError}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Frontend Success Feedback Notice */}
-        {successInfo && (
-          <div className="auth-alert-box success" role="status" aria-live="polite">
-            <span className="alert-icon" aria-hidden="true">🛡️</span>
-            <div className="alert-content">
-              <strong>Registration Successful!</strong>
-              <div>
-                Welcome, <strong>{successInfo.fullName}</strong> ({successInfo.email}). Your session is active. Redirecting to workspace...
-              </div>
-              <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="orca-btn orca-btn-sm orca-btn-primary"
-                  onClick={() => navigate('/user/dashboard')}
-                >
-                  Enter Workspace Immediately →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          {/* 1. Full Name */}
-          <FormInput
-            id="register-fullname"
-            name="fullName"
-            label="Full Legal Name"
-            type="text"
-            required
-            value={formData.fullName}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Dr. Sylvia Earle"
-            autoComplete="name"
-            hint="Scientific and maritime communications will use this identifier."
-            error={touched.fullName ? errors.fullName : ''}
-            isValid={touched.fullName && !errors.fullName && formData.fullName.trim().length > 0}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            }
-          />
-
-          {/* 2. Email Address */}
-          <FormInput
-            id="register-email"
-            name="email"
-            label="Scientific / Institutional Email"
-            type="email"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="sylvia.earle@deepsea.org"
-            autoComplete="email"
-            error={touched.email ? errors.email : ''}
-            isValid={touched.email && !errors.email && formData.email.trim().length > 0}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
-              </svg>
-            }
-          />
-
-          {/* 3. Password */}
-          <FormInput
-            id="register-password"
-            name="password"
-            label="Password"
-            type="password"
-            required
-            value={formData.password}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Create a high-entropy password"
-            autoComplete="new-password"
-            error={touched.password ? errors.password : ''}
-            isValid={touched.password && !errors.password && formData.password.length > 0}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            }
-          />
-
-          {/* Password Strength Meter & Real-time Requirements */}
-          <PasswordStrengthMeter password={formData.password} />
-
-          {/* 4. Confirm Password */}
-          <FormInput
-            id="register-confirm-password"
-            name="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            required
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="Re-enter password to confirm"
-            autoComplete="new-password"
-            error={touched.confirmPassword ? errors.confirmPassword : ''}
-            isValid={
-              touched.confirmPassword &&
-              !errors.confirmPassword &&
-              formData.confirmPassword.length > 0 &&
-              formData.confirmPassword === formData.password
-            }
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-            }
-          />
-
-          {/* 5. Submit Button */}
-          <Button
-            id="register-submit-btn"
-            type="submit"
-            variant="primary"
-            loading={isSubmitting}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-            }
-          >
-            Create Researcher Account
-          </Button>
-
+      {/* Main Card */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-sm border border-slate-200 rounded-2xl">
           {successInfo && (
-            <button
-              type="button"
-              onClick={handleReset}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--orca-text-muted)',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                textAlign: 'center',
-                textDecoration: 'underline',
-              }}
-            >
-              Clear form to test again
-            </button>
+            <div className="auth-alert-box success mb-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+              <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{successInfo}</span>
+            </div>
           )}
-        </form>
 
-        {/* Client-side SPA navigation link to Login */}
-        <div className="auth-switch-footer">
-          <span>Already registered in the ORCA registry? </span>
-          <Link
-            to="/login"
-            className="auth-switch-link"
-            id="nav-to-login-link"
-          >
-            Sign in here →
-          </Link>
-        </div>
+          {regError && (
+            <div className="auth-alert-box error mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center gap-2">
+              <svg className="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{regError}</span>
+            </div>
+          )}
 
-        {/* Scope disclaimer */}
-        <div className="auth-scope-disclaimer">
-          <span aria-hidden="true">ℹ️</span>
-          <span>
-            <strong>Production State:</strong> Registered credentials immediately initialize session token and establish WebSocket/REST connectivity to specialist agents.
-          </span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="register-fullname" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Full Name
+              </label>
+              <input
+                id="register-fullname"
+                name="fullName"
+                type="text"
+                value={formData.fullName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="Dr. Rachel Carson"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden transition-colors ${
+                  errors.fullName
+                    ? 'border-rose-300 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800'
+                }`}
+              />
+              {errors.fullName && (
+                <p id="register-fullname-error" className="mt-1 text-xs text-rose-600">
+                  {errors.fullName}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="register-email" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Email Address
+              </label>
+              <input
+                id="register-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="rachel.carson@orca-marine.org"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden transition-colors ${
+                  errors.email
+                    ? 'border-rose-300 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800'
+                }`}
+              />
+              {errors.email && (
+                <p id="register-email-error" className="mt-1 text-xs text-rose-600">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="register-password" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Password
+                </label>
+                {formData.password && (
+                  <span className="strength-score-text text-[11px] font-medium text-slate-500">
+                    Strength: {strength.text}
+                  </span>
+                )}
+              </div>
+              <input
+                id="register-password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="At least 8 chars with upper, number, & special"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden transition-colors ${
+                  errors.password
+                    ? 'border-rose-300 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800'
+                }`}
+              />
+              {errors.password && (
+                <p id="register-password-error" className="mt-1 text-xs text-rose-600">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="register-confirmpassword" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Confirm Password
+              </label>
+              <input
+                id="register-confirmpassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder="Repeat password"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden transition-colors ${
+                  errors.confirmPassword
+                    ? 'border-rose-300 focus:border-rose-500 bg-rose-50/20'
+                    : 'border-slate-300 focus:border-slate-800 focus:ring-1 focus:ring-slate-800'
+                }`}
+              />
+              {errors.confirmPassword && (
+                <p id="register-confirmpassword-error" className="mt-1 text-xs text-rose-600">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            <button
+              id="register-submit-btn"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full mt-2 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm transition-colors shadow-xs disabled:opacity-50"
+            >
+              {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-xs text-slate-500">
+            Already have an account?{' '}
+            <Link
+              id="nav-to-login-link"
+              to="/login"
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              Sign in
+            </Link>
+            <Link
+              id="nav-link-login"
+              to="/login"
+              className="sr-only"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </div>
     </div>

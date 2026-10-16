@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 
 const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-const artifactsDir = process.env.ARTIFACTS_DIR || path.join(os.tmpdir(), 'orca-browser-artifacts');
+const artifactsDir = 'C:\\Users\\PUSHTAM\\.gemini\\antigravity-ide\\brain\\dad6a0b5-d67f-41a6-9ced-cfaa998cf679';
 const profileDir = path.join(artifactsDir, 'scratch', 'edge_test_profile');
+
+fs.mkdirSync(profileDir, { recursive: true });
 
 console.log('====================================================');
 console.log('ORCA: Executing Headless Browser Auth Verification');
@@ -13,28 +14,6 @@ console.log('Browser Binary:', edgePath);
 console.log('Target URL: http://localhost:5173/');
 console.log('Artifacts Dir:', artifactsDir);
 console.log('====================================================\n');
-
-// Server Prerequisite Check
-console.log('Checking frontend server availability at http://localhost:5173/ ...');
-let isServerRunning = false;
-try {
-  const ping = await fetch('http://localhost:5173/', { signal: AbortSignal.timeout(1500) });
-  isServerRunning = ping.ok || ping.status === 200 || ping.status === 304;
-} catch {
-  isServerRunning = false;
-}
-
-if (!isServerRunning) {
-  console.log('====================================================');
-  console.log('ORCA: Auth Browser Test Prerequisites Check');
-  console.log('STATUS: [BLOCKED]');
-  console.log('REASON: Frontend development server is not running on http://localhost:5173/');
-  console.log('EXACT PREREQUISITE: Start Vite development server with "npm run dev"');
-  console.log('====================================================\n');
-  process.exit(0);
-}
-
-fs.mkdirSync(profileDir, { recursive: true });
 
 const edgeProc = spawn(edgePath, [
   '--headless=new',
